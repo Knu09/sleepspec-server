@@ -1,8 +1,7 @@
 from enum import Enum
 from flask import Flask, request, jsonify 
 from pathlib import Path
-
-from werkzeug.datastructures import FileStorage
+from http import HTTPStatus
 
 app = Flask(__name__)
 
@@ -13,11 +12,11 @@ class Class(Enum):
 @app.route("/", methods=["POST"])
 def Index():
     if "audio" not in request.files:
-        return jsonify({"error": "No audio file in request."}), 400
+        return jsonify({"error": "No audio file in request."}), HTTPStatus.BAD_REQUEST
 
     audio_file = request.files["audio"]
     if audio_file.filename:
-        file_path = Path("./tmp") / audio_file.filename
+        file_path = Path("./tmp/uploads") / audio_file.filename
         audio_file.save(file_path)
 
         classify(file_path)
@@ -25,9 +24,9 @@ def Index():
         return jsonify({
             "class": Class.NSD,
             "result": "You are not sleep deprived.",
-        }), 200
+        }), HTTPStatus.OK
     
-    return jsonify({"error": "There was a problem saving the file"}), 500
+    return jsonify({"error": "There was a problem saving the file"}), HTTPStatus.INTERNAL_SERVER_ERROR
 
 def classify(audio_path: Path) -> Class:
     # insert classification logic here
