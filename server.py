@@ -18,8 +18,8 @@ class Classification:
     result: str
     # other fields here
 
-@app.route("/", methods=["POST"])
-def Index():
+@app.route("/upload", methods=["POST"])
+def Upload():
     if "audio" not in request.files:
         return jsonify({"error": "No audio file in request."}), HTTPStatus.BAD_REQUEST
 
