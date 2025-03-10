@@ -5,9 +5,7 @@ from pathlib import Path
 from http import HTTPStatus
 from enum import Enum
 from dataclasses import dataclass
-import os
 import pickle
-import joblib
 import numpy as np
 from scipy.special import softmax
 from sklearn.metrics import balanced_accuracy_score
@@ -115,7 +113,7 @@ def classify(audio_path: Path) -> Classification:
     probs = softmax(logits)
     confidence = np.max(probs)
 
-    if y_pred == svm.classes[0]:
+    if y_pred == svm.classes_[0]:
         return Classification(
             sd=SD_Class.SD,
             confidence_score=confidence,  # 82.6%
