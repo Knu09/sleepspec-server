@@ -14,7 +14,7 @@ class SD_Class(Enum):
 @dataclass
 class Classification:
     sd: SD_Class
-    confidence_score: int
+    confidence_score: float
     # other fields here
 
 @app.route("/", methods=["POST"])
@@ -38,4 +38,4 @@ def Index():
 
 def classify(audio_path: Path) -> Classification:
     # insert classification logic here
-    pass
+    return Classification(sd=SD_Class.NSD, confidence_score=0.826) # 82.6%
