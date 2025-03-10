@@ -7,6 +7,7 @@ from enum import Enum
 from dataclasses import dataclass
 
 app = Flask(__name__)
+uploads_path = "tmp/uploads"
 
 
 class SD_Class(Enum):
@@ -29,7 +30,6 @@ def Upload():
 
     audio_file = request.files["audio"]
     if audio_file.filename:
-        uploads_path = "tmp/uploads"
         Path(uploads_path).mkdir(parents=True, exist_ok=True)
 
         uploads = Path(uploads_path)
@@ -66,9 +66,9 @@ def classify(audio_path: Path) -> Classification:
 
 
 def convertWAV(audio: Path) -> Path:
-    basename = audio.stem
+    wav = audio.with_suffix('.wav')
     file = AudioSegment.from_file(audio)
-    file.export(basename, format="wav")
-    
+    file.export(wav, format="wav")
+
     audio.unlink()
-    return Path(f"{basename}.wav")
+    return Path(wav)
