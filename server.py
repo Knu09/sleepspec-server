@@ -1,5 +1,6 @@
 from enum import Enum
-from flask import Flask, request, jsonify 
+from werkzeug.utils import secure_filename
+from flask import Flask, request, jsonify
 from pathlib import Path
 from http import HTTPStatus
 
@@ -16,7 +17,7 @@ def Index():
 
     audio_file = request.files["audio"]
     if audio_file.filename:
-        file_path = Path("./tmp/uploads") / audio_file.filename
+        file_path = Path("./tmp/uploads") / secure_filename(audio_file.filename)
         audio_file.save(file_path)
 
         return jsonify({
