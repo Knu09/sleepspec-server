@@ -19,10 +19,8 @@ def Index():
         file_path = Path("./tmp/uploads") / audio_file.filename
         audio_file.save(file_path)
 
-        classify(file_path)
-        
         return jsonify({
-            "class": Class.NSD,
+            "class": classify(file_path),
             "result": "You are not sleep deprived.",
         }), HTTPStatus.OK
     
