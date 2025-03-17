@@ -7,9 +7,9 @@ __pycache__/
 *.so
     
 # file extensions
-.wav
-.pkl
-.m4a
+*.wav
+*.pkl
+*.m4a
 
 # Distribution / packaging
 .Python
