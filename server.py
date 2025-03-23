@@ -151,21 +151,24 @@ def classify(audio_path: Path) -> Classification:
         svm_path (str): Path to the trained SVM model (.pkl file).
         pca_path (str): Path to the trained PCA model (.pkl file).
     """
-    svm_path = Path("./population_level_svm.pkl")
-    pca_path = Path("./population_level_pca.pkl")
+    svm_path = Path(
+        # "$HOME/Research/Sleep Deprivation Detection using voice/output/pop_level/svm_fold_4.pkl"
+        "./svm_with_pca_fold_4.pkl"
+    )
+
     test_sample_path = Path(
         # "~/Research/Sleep Deprivation Detection using voice/strf_data_new.pkl"
         # "~/Research/Sleep Deprivation Detection using voice/dataset/osf/stmtf/strf_session_post_subjectNb_01_daySession_01_segmentNb_0.pkl"
         # "~/github/16Khz-models/feature_extraction/gian_data_new.pkl"
-        "./strf_data_new.pkl"
         # "~/github/16Khz-models/feature_extraction/pkls/segment_72_strf.pkl"
+        "./strf_data_new.pkl"
     )
 
     # Load the SVM and PCA models using pickle
     with open(svm_path, "rb") as f:
-        svm = pickle.load(f)
-    with open(pca_path, "rb") as f:
-        pca = pickle.load(f)
+        data = pickle.load(f)
+    svm = data["svm"]
+    pca = data["pca"]
     # Define the output directory, if necessary to be stored
     output_dir_processed = "preprocess/preprocessed_audio/processed_audio/"
     output_dir_features = "feature_extraction/extracted_features/feature"
@@ -192,8 +195,7 @@ def classify(audio_path: Path) -> Classification:
     # test_sample = np.mean(magnitude_strf, axis=0)
     # print(test_sample["strf"])
 
-    pre_count, post_count, avg_confidence_score = predict_features(
-        features, svm, pca)
+    pre_count, post_count, avg_confidence_score = predict_features(features, svm, pca)
 
     if post_count > pre_count:
         return Classification(
