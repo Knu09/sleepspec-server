@@ -15,7 +15,6 @@ from sklearn.metrics import balanced_accuracy_score
 
 sys.path.append("preprocess/")
 sys.path.append("feature_extraction/")
->>>>>> > 0fc94b9(update: server.py)
 
 app = Flask(__name__)
 uploads_path = "tmp/uploads"

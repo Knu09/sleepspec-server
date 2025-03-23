@@ -7,9 +7,12 @@ __pycache__/
 *.so
     
 # directories
-preprocess/preprocessed_audio
 feature_extraction/data/
 feature_extraction/data_audio/
+preprocess/preprocessed_audio/
+preprocess/processed_audio_3/
+preprocess/processed_audio/
+preprocess/preprocessed_audio_erik/
 
 # file extensions
 *.wav
