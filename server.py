@@ -95,9 +95,7 @@ def classify(audio_path: Path) -> Classification:
     expected_features = pca.components_.shape[1]
     if test_sample_flattened.shape[0] != expected_features:
         raise ValueError(
-            f"Feature mismatch! Expected {expected_features} features, but got {
-                test_sample_flattened.shape[0]
-            }."
+            f"Feature mismatch! Expected {expected_features} features, but got {test_sample_flattened.shape[0]}."
         )
 
     max_test_sample = np.max(np.abs(test_sample))
