@@ -30,7 +30,7 @@
 
           shellHook = ''
             echo "Flask ML environment loaded."
-            echo "Run your Flask app with: python your_app.py"
+            echo "Run in dev mode: flask --app server run"
           '';
         };
       });
