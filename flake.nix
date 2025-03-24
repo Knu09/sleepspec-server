@@ -31,6 +31,27 @@
         };
       };
 
+      # Define noisereduce package
+      flask_cors = pkgs.python312Packages.buildPythonPackage rec {
+        pname = "flask_cors";
+        version = "5.0.0"; # Specify the desired version
+
+        src = pkgs.fetchPypi {
+          inherit pname version;
+          sha256 = "5aadb4b950c4e93745034594d9f3ea6591f734bb3662e16e255ffbf5e89c88ef";
+        };
+
+        meta = with pkgs.lib; {
+          description = "A Flask extension for handling Cross Origin Resource Sharing (CORS), making cross-origin AJAX possible.";
+          homepage = "https://github.com/corydolphin/flask-cors";
+          license = licenses.mit;
+        };
+
+        propagatedBuildInputs = with pkgs.python312Packages; [
+          flask
+        ];
+      };
+
       pythonEnv = pkgs.python312.withPackages (ps:
         with ps; [
           flask
@@ -42,6 +63,7 @@
           scikit-learn
           scipy
           noisereduce
+          flask_cors
           tqdm
         ]);
     in {
