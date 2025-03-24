@@ -49,6 +49,7 @@ def remove_silence(input_file, silence_thresh=-40, min_silence_len=500) -> Audio
         silence_thresh=silence_thresh,
         keep_silence=100,  # Keep 100 ms of silence at the start/end of each chunk
     )
+
     return sum(chunks, AudioSegment.silent(duration=0))
 
 
