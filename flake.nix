@@ -55,8 +55,9 @@
         ];
 
         shellHook = ''
-          echo "Flask ML environment loaded."
+          echo "Flask server environment loaded."
           echo "Run in dev mode: flask --app server run"
+          echo "Run in dev mode and allow all hosts: flask --app server run --host=0.0.0.0"
         '';
       };
     });
