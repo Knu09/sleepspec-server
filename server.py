@@ -196,7 +196,7 @@ def classify(audio_path: Path) -> Classification:
     pca = data["pca"]
     # Define the output directory, if necessary to be stored
     output_dir_processed = "preprocess/preprocessed_audio/processed_audio/"
-    output_dir_features = "feature_extraction/extracted_features/feature"
+    output_dir_features = Path("feature_extraction/extracted_features/feature")
 
     segments, sr = preprocess_audio(audio_path, output_dir_processed)
 
