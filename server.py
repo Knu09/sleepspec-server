@@ -175,6 +175,7 @@ def classify(audio_path: Path) -> Classification:
     output_dir_processed = "preprocess/preprocessed_audio/processed_audio/"
     output_dir_features = "feature_extraction/extracted_features/feature"
 
+    # Preprocess
     segments, sr = preprocess_audio(audio_path, output_dir_processed)
 
     # Print details
@@ -197,6 +198,7 @@ def classify(audio_path: Path) -> Classification:
     # test_sample = np.mean(magnitude_strf, axis=0)
     # print(test_sample["strf"])
 
+    # Prediction of extracted features
     pre_count, post_count, avg_confidence_score = predict_features(features, svm, pca)
 
     if post_count > pre_count:
