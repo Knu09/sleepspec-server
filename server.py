@@ -3,6 +3,7 @@ from preprocess.preprocess import preprocess_audio
 import sys
 from werkzeug.utils import secure_filename
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 from pydub import AudioSegment
 from pathlib import Path
 from http import HTTPStatus
@@ -17,6 +18,7 @@ sys.path.append("preprocess/")
 sys.path.append("feature_extraction/")
 
 app = Flask(__name__)
+CORS(app)
 uploads_path = "tmp/uploads"
 
 
