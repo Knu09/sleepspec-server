@@ -69,6 +69,9 @@ def Upload():
 
 
 def predict_features(features, svm, pca):
+    if not features:
+        print("error: no feautures accepted")
+        return 0, 0, 0.0
     pre_counter = 0
     post_counter = 0
     avg_confidence_score = 0.0
@@ -136,7 +139,20 @@ def predict_features(features, svm, pca):
 
         avg_confidence_score += confidence
 
-    avg_confidence_score = avg_confidence_score / len(features)
+    try:
+        avg_confidence_score = avg_confidence_score / len(features)
+    except ZeroDivisionError:
+        if hasattr(svm, "decision_function"):
+            decision_scores = svm.decision_function(feature_pca)
+            probs = softmax(decision_scores)
+        elif hasattr(svm, "predict_proba"):
+            probs = svm.predict_proba(feature_pca)
+        else:
+            raise AttributeError(
+                "SVM model does not support decision_function or predict_proba."
+            )
+        avg_confidence_score = np.max(probs)
+
     print(f"Pre (non-sleep-deprived) features counts: {pre_counter}")
     print(f"Post (non-sleep-deprived) features counts: {post_counter}")
     print(f"average CFS: {avg_confidence_score}")

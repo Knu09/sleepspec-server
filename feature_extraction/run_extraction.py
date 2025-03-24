@@ -5,6 +5,9 @@ All rights reserved
 
 """
 
+from feature_extraction import utils
+from feature_extraction import plotslib
+from feature_extraction import auditory
 from numpy.ma import append
 import matplotlib.pylab as plt
 from librosa import feature
@@ -18,10 +21,6 @@ from pathlib import Path
 
 
 sys.path.append(str(Path(__file__).resolve().parent))
-
-import auditory
-import plotslib
-import utils
 
 
 ####
@@ -61,8 +60,8 @@ scales_vec = [0.71, 1.0, 1.41, 2.00, 2.83, 4.00, 5.66, 8.00]
 # input_dir = "/home/christian/Desktop/C_005/THESIS/Datasets/Predi_COVID19_Fatigue_Voice_Recording/fatigue/TypeW/Type1/"
 # output_dir = "extracted_features/Predi_extracted_features/"
 
-input_dir = "/home/christian/Desktop/C_005/THESIS/training/16Khz-training/preprocess/preprocessed_audio/preprocess_audio_erik/"
-output_dir = "extracted_features/erik_extracted_features/"
+# input_dir = "/home/christian/Desktop/C_005/THESIS/training/16Khz-training/preprocess/preprocessed_audio/preprocess_audio_erik/"
+# output_dir = "extracted_features/erik_extracted_features/"
 
 # wav_file = "Predi-COVID_0098_20200624100830_1_m4a_W_0.wav"
 # wav_file = "Predi-COVID_0090_20200627194317_1_m4a_M_0.wav"

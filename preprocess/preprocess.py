@@ -38,7 +38,7 @@ def get_unique_output_dir(base_dir: Path) -> Path:
     return output_dir
 
 
-def remove_silence(input_file, silence_thresh=-40, min_silence_len=500):
+def remove_silence(input_file, silence_thresh=-40, min_silence_len=500) -> AudioSegment:
     """
     Removes silent segments form the audio file.
     """
@@ -49,7 +49,7 @@ def remove_silence(input_file, silence_thresh=-40, min_silence_len=500):
         silence_thresh=silence_thresh,
         keep_silence=100,  # Keep 100 ms of silence at the start/end of each chunk
     )
-    return sum(chunks, AudioSegment.silent(0))
+    return sum(chunks, AudioSegment.silent(duration=0))
 
 
 # Define preprocessing function
@@ -154,6 +154,7 @@ def preprocess_audio(
 # source_dir = "/home/christian/Desktop/C_006/THESIS/Datasets/Predi_COVID19_Fatigue_Voice_Recording/fatigue/TypeW/Type1/"
 # output_base_dir = "preprocessed_audio/preprocess_audio/"
 # input_audio = "../data/Eriks_Voice.m4a"
+
 # segments, sr = preprocess_audio(input_audio, output_base_dir)
 
 # Segmented Audio
