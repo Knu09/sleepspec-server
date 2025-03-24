@@ -16,7 +16,6 @@ preprocess/preprocessed_audio_erik/
 
 # file extensions
 *.wav
-*.pkl
 *.mp3
 *.m4a
 
