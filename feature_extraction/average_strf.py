@@ -1,4 +1,4 @@
-import os
+from pathlib import Path
 import numpy as np
 import utils
 import auditory
@@ -8,10 +8,10 @@ import matplotlib.pyplot as plt
 
 # Define the directory containing the audio files
 # audio_dir = "../data"
-audio_dir = "../preprocess/preprocessed_audio/preprocess_audio_erik/"
+audio_dir = Path("../preprocess/preprocessed_audio/preprocess_audio_erik/")
 
 # Define the rates and scales vectors
-rates_vec = [
+rates_vec: list[float] = [
     -32,
     -22.6,
     -16,
@@ -46,10 +46,10 @@ total_freq_scale = np.zeros((128, len(scales_vec)))
 num_files = 0
 
 # Loop through all audio files in the directory
-for filename in os.listdir(audio_dir):
-    if filename.endswith(".wav"):
+for filename in audio_dir.iterdir():
+    if filename.suffix == ".wav":
         # Construct the full file path
-        wav_file = os.path.join(audio_dir, filename)
+        wav_file = audio_dir / filename
 
         # Load the audio file
         audio, fs = utils.audio_data(wav_file)
@@ -103,7 +103,7 @@ plt.imshow(
     avg_scale_rate,
     aspect="auto",
     origin="lower",
-    extent=[rates_vec[0], rates_vec[-1], scales_vec[0], scales_vec[-1]],
+    extent=(rates_vec[0], rates_vec[-1], scales_vec[0], scales_vec[-1]),
     interpolation="gaussian",
     cmap="viridis",
 )

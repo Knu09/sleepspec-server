@@ -1,4 +1,4 @@
-import os
+from pathlib import Path
 import librosa
 import soundfile as sf
 import numpy as np
@@ -7,11 +7,11 @@ from pydub import AudioSegment
 from pydub.silence import split_on_silence
 
 
-def check_audio_extension(input_file):
-    ext = os.path.splitext(input_file)[-1].lower()
+def check_audio_extension(input_file: Path):
+    ext = input_file.suffix.lower()
     if ext != ".wav":
         audio = AudioSegment.from_file(input_file)
-        output_file = os.path.splitext(input_file)[0] + ".wav"
+        output_file = input_file.with_suffix(".wav")
         audio.export(output_file, format="wav")
         print(f"Converted to WAV: {output_file}")
         return output_file
@@ -25,16 +25,16 @@ def load_audio_with_soundfile(input_file):
     return y, sr
 
 
-def get_unique_output_dir(base_dir):
-    if not base_dir:
-        return None
-
+def get_unique_output_dir(base_dir: Path) -> Path:
+    base_path = Path(base_dir)
+    output_dir = base_path
     counter = 1
-    output_dir = base_dir
-    while os.path.exists(output_dir):
-        output_dir = f"{base_dir.rstrip('/')}_{counter}/"
+
+    while output_dir.exists():
+        output_dir = base_path.parent / f"{base_path.stem}_{counter}"
         counter += 1
-    os.makedirs(output_dir)
+
+    output_dir.mkdir(parents=True, exist_ok=True)
     return output_dir
 
 
@@ -53,7 +53,9 @@ def remove_silence(input_file, silence_thresh=-40, min_silence_len=500) -> Audio
 
 
 # Define preprocessing function
-def preprocess_audio(input_file, output_dir="", segment_length=15, target_sr=16000):
+def preprocess_audio(
+    input_file, output_dir=Path(""), segment_length=15, target_sr=16000
+):
     """
     Preprocesses an audio file by performing noise reduction, segmentation (15s), amplitude normalization, silence removal, and downsampling (44.1kHz to 16kHz).
 
@@ -79,7 +81,7 @@ def preprocess_audio(input_file, output_dir="", segment_length=15, target_sr=160
 
     # Remove silence from the audio
     audio_no_silence = remove_silence(input_file)
-    temp_file = os.path.join(output_dir, "temp_no_silence.wav")
+    temp_file = Path(output_dir) / Path("temp_no_silence.wav")
     audio_no_silence.export(temp_file, format="wav")
 
     y, sr = load_audio_with_soundfile(input_file)
@@ -109,7 +111,7 @@ def preprocess_audio(input_file, output_dir="", segment_length=15, target_sr=160
     # total_samples = len(y_denoised)
 
     # Get the base filename of the audio (excluding extension)
-    audio_filename = os.path.splitext(os.path.basename(input_file))[0]
+    audio_filename = Path(input_file).stem
 
     # Calculate segment length in samples
     segment_samples = segment_length * sr
@@ -124,7 +126,7 @@ def preprocess_audio(input_file, output_dir="", segment_length=15, target_sr=160
             # Save segment to disk if output_dir is provided
             if output_dir:
                 sf.write(
-                    os.path.join(output_dir, f"{audio_filename}_segment_{i + 1}.wav"),
+                    output_dir / f"{audio_filename}_segment_{i+1}.wav",
                     segment,
                     sr,
                 )
