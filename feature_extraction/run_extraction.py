@@ -120,9 +120,10 @@ def feature_extract_segments(segment_audio_arr, output_dir: Path, sample_rate):
         real_valued_strf, fs = extract_features(segment, sample_rate)
         features.append(real_valued_strf)
 
+        # output_dir = Path(output_dir)
         # Store in the directory
-        output_file = output_dir / f"extracted_feature_segment_{i + 1}_strf.pkl"
-
+        output_file = output_dir / \
+            f"extracted_feature_segment_{i + 1}_strf.pkl"
 
         strf_data = {
             "strf": real_valued_strf,

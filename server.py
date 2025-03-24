@@ -32,6 +32,7 @@ class Classification:
     sd: SD_Class
     confidence_score: float
     result: str
+    is_success: bool
     # other fields here
 
 
@@ -69,9 +70,11 @@ def Upload():
 
 
 def predict_features(features, svm, pca):
+    # error when auidio is less than 15 secs
     if not features:
-        print("error: no feautures accepted")
-        return 0, 0, 0.0
+        print("!!!!!!!!!!error: no features accepted!!!!!!!!!!")
+        is_success = False
+        return 0, 0, 0.0, is_success
     pre_counter = 0
     post_counter = 0
     avg_confidence_score = 0.0
@@ -113,20 +116,23 @@ def predict_features(features, svm, pca):
         # print(f"post counts: {post_counter}")
         # print(f"pre counts: {pre_counter}")
 
-        if hasattr(svm, "decision_function"):
-            decision_scores = svm.decision_function(feature_pca)
-            probs = softmax(decision_scores)
-        elif hasattr(svm, "predict_proba"):
-            probs = svm.predict_proba(feature_pca)
-        else:
-            raise AttributeError(
-                "SVM model does not support decision_function or predict_proba."
-            )
+        # if hasattr(svm, "decision_function"):
+        #     decision_scores = svm.decision_function(feature_pca)
+        #     probs = softmax(decision_scores)
+        # elif hasattr(svm, "predict_proba"):
+        #     probs = svm.predict_proba(feature_pca)
+        # else:
+        #     raise AttributeError(
+        #         "SVM model does not support decision_function or predict_proba."
+        #     )
 
         # logits = np.array([1.0, 0.1])
         # probs = softmax(logits)
-        confidence = np.max(probs)
-        print(f"confidence score: {confidence}")
+        # confidence = np.max(probs)
+        probs = svm.predict_proba(feature_pca)
+        confidence = np.max(probs, axis=1)
+
+        print(f"confidence scorex: {confidence}")
 
         # Update counters based on prediction
         if y_pred == svm.classes_[0]:
@@ -151,13 +157,14 @@ def predict_features(features, svm, pca):
             raise AttributeError(
                 "SVM model does not support decision_function or predict_proba."
             )
-        avg_confidence_score = np.max(probs)
+        # avg_confidence_score = np.max(probs)
 
     print(f"Pre (non-sleep-deprived) features counts: {pre_counter}")
     print(f"Post (non-sleep-deprived) features counts: {post_counter}")
     print(f"average CFS: {avg_confidence_score}")
+    is_success = True
 
-    return pre_counter, post_counter, avg_confidence_score
+    return pre_counter, post_counter, avg_confidence_score, is_success
 
 
 def classify(audio_path: Path) -> Classification:
@@ -189,7 +196,7 @@ def classify(audio_path: Path) -> Classification:
     pca = data["pca"]
     # Define the output directory, if necessary to be stored
     output_dir_processed = "preprocess/preprocessed_audio/processed_audio/"
-    output_dir_features = "feature_extraction/extracted_features/feature"
+    output_dir_features = Path("feature_extraction/extracted_features/feature")
 
     segments, sr = preprocess_audio(audio_path, output_dir_processed)
 
@@ -213,19 +220,25 @@ def classify(audio_path: Path) -> Classification:
     # test_sample = np.mean(magnitude_strf, axis=0)
     # print(test_sample["strf"])
 
-    pre_count, post_count, avg_confidence_score = predict_features(features, svm, pca)
+    pre_count, post_count, avg_confidence_score, is_success = predict_features(
+        features, svm, pca
+    )
+
+    print(f"\nsuccess: {is_success}\n")
 
     if post_count > pre_count:
         return Classification(
             sd=SD_Class.SD,
             confidence_score=avg_confidence_score,  # 82.6%
             result="You are sleep deprived.",
+            is_success=is_success,
         )
     else:
         return Classification(
             sd=SD_Class.NSD,
             confidence_score=avg_confidence_score,  # 82.6%
             result="You are not sleep deprived.",
+            is_success=is_success,
         )
 
 
