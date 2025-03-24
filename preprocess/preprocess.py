@@ -38,7 +38,7 @@ def get_unique_output_dir(base_dir):
     return output_dir
 
 
-def remove_silence(input_file, silence_thresh=-40, min_silence_len=500):
+def remove_silence(input_file, silence_thresh=-40, min_silence_len=500) -> AudioSegment:
     """
     Removes silent segments form the audio file.
     """
@@ -49,7 +49,7 @@ def remove_silence(input_file, silence_thresh=-40, min_silence_len=500):
         silence_thresh=silence_thresh,
         keep_silence=100,  # Keep 100 ms of silence at the start/end of each chunk
     )
-    return sum(chunks)
+    return sum(chunks, AudioSegment.silent(duration=0))
 
 
 # Define preprocessing function
@@ -93,7 +93,7 @@ def preprocess_audio(input_file, output_dir="", segment_length=15, target_sr=160
     chunk_size = sr * 5  # Process 5-second chunks
     y_denoised = np.concatenate(
         [
-            nr.reduce_noise(y[i: i + chunk_size], sr=sr)
+            nr.reduce_noise(y[i : i + chunk_size], sr=sr)
             for i in range(0, len(y), chunk_size)
         ]
     )
@@ -103,8 +103,7 @@ def preprocess_audio(input_file, output_dir="", segment_length=15, target_sr=160
 
     # Resample from 44.1kHz to 16kHz if not in target sampling rate
     if sr != target_sr:
-        y_normalized = librosa.resample(
-            y_denoised, orig_sr=sr, target_sr=target_sr)
+        y_normalized = librosa.resample(y_denoised, orig_sr=sr, target_sr=target_sr)
         sr = target_sr
 
     # total_samples = len(y_denoised)
@@ -125,8 +124,7 @@ def preprocess_audio(input_file, output_dir="", segment_length=15, target_sr=160
             # Save segment to disk if output_dir is provided
             if output_dir:
                 sf.write(
-                    os.path.join(output_dir, f"{
-                                 audio_filename}_segment_{i + 1}.wav"),
+                    os.path.join(output_dir, f"{audio_filename}_segment_{i + 1}.wav"),
                     segment,
                     sr,
                 )
@@ -154,6 +152,7 @@ def preprocess_audio(input_file, output_dir="", segment_length=15, target_sr=160
 # source_dir = "/home/christian/Desktop/C_006/THESIS/Datasets/Predi_COVID19_Fatigue_Voice_Recording/fatigue/TypeW/Type1/"
 # output_base_dir = "preprocessed_audio/preprocess_audio/"
 # input_audio = "../data/Eriks_Voice.m4a"
+
 # segments, sr = preprocess_audio(input_audio, output_base_dir)
 
 # Segmented Audio
