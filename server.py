@@ -157,6 +157,7 @@ def predict_features(features, svm, pca):
             raise AttributeError(
                 "SVM model does not support decision_function or predict_proba."
             )
+
         # avg_confidence_score = np.max(probs)
 
     print(f"Pre (non-sleep-deprived) features counts: {pre_counter}")

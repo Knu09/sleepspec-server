@@ -5,6 +5,9 @@ All rights reserved
 
 """
 
+from feature_extraction import utils
+from feature_extraction import plotslib
+from feature_extraction import auditory
 from numpy.ma import append
 import matplotlib.pylab as plt
 from librosa import feature
@@ -14,14 +17,10 @@ from scipy.fft import ifft2, ifftshift
 import numpy as np
 import pickle
 import sys
-import os
+from pathlib import Path
 
 
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-
-import auditory
-import plotslib
-import utils
+sys.path.append(str(Path(__file__).resolve().parent))
 
 
 ####
@@ -61,8 +60,8 @@ scales_vec = [0.71, 1.0, 1.41, 2.00, 2.83, 4.00, 5.66, 8.00]
 # input_dir = "/home/christian/Desktop/C_005/THESIS/Datasets/Predi_COVID19_Fatigue_Voice_Recording/fatigue/TypeW/Type1/"
 # output_dir = "extracted_features/Predi_extracted_features/"
 
-input_dir = "/home/christian/Desktop/C_005/THESIS/training/16Khz-training/preprocess/preprocessed_audio/preprocess_audio_erik/"
-output_dir = "extracted_features/erik_extracted_features/"
+# input_dir = "/home/christian/Desktop/C_005/THESIS/training/16Khz-training/preprocess/preprocessed_audio/preprocess_audio_erik/"
+# output_dir = "extracted_features/erik_extracted_features/"
 
 # wav_file = "Predi-COVID_0098_20200624100830_1_m4a_W_0.wav"
 # wav_file = "Predi-COVID_0090_20200627194317_1_m4a_M_0.wav"
@@ -90,19 +89,18 @@ def extract_features(audio_segment, fs):
     # print(real_valued_strf)  ## print entire array of STRF
     return real_valued_strf, fs
 
+
 # feature extraction for segmented audio in specific directory
-def feature_extract_dir(input_dir, output_dir):
-    for filename in os.listdir(input_dir):
+def feature_extract_dir(input_dir: Path, output_dir: Path):
+    for filename in input_dir.iterdir():
         print(f"Processing file: {filename}")
 
-        audio_file = os.path.join(input_dir, filename)
+        audio_file = input_dir / filename
 
         audio_file, fs = utils.audio_data(audio_file)
         real_valued_strf, fs = extract_features(audio_file, fs)
 
-        output_file = os.path.join(
-            output_dir, f"{os.path.splitext(filename)[0]}_strf.pkl"
-        )
+        output_file = output_dir / f"{filename.stem}_strf.pkl"
         strf_data = {
             "strf": real_valued_strf,
             "fs": fs,
@@ -114,7 +112,7 @@ def feature_extract_dir(input_dir, output_dir):
         print(f"Saved output to: {output_file}")
 
 
-def feature_extract_segments(segment_audio_arr, output_dir, sample_rate):
+def feature_extract_segments(segment_audio_arr, output_dir: Path, sample_rate):
     features = []
     for i, segment in enumerate(segment_audio_arr):
         print(f"Processing Segment {i + 1}")
@@ -123,9 +121,8 @@ def feature_extract_segments(segment_audio_arr, output_dir, sample_rate):
         features.append(real_valued_strf)
 
         # Store in the directory
-        output_file = os.path.join(
-            output_dir, f"extracted_feature_segment_{i + 1}_strf.pkl"
-        )
+        output_file = output_dir / f"extracted_feature_segment_{i + 1}_strf.pkl"
+
 
         strf_data = {
             "strf": real_valued_strf,
