@@ -29,7 +29,7 @@
       };
     };
 
-    # Define noisereduce package
+    # Define flask_cors package
     flask_cors = pkgs.python312Packages.buildPythonPackage rec {
       pname = "flask_cors";
       version = "5.0.0"; # Specify the desired version
@@ -50,9 +50,10 @@
       ];
     };
 
-    pythonEnv = pkgs.python312.withPackages (ps:
+    pythonPkgs = pkgs.python312.withPackages (ps:
       with ps; [
         flask
+        flask_cors
         librosa
         matplotlib
         noisereduce
@@ -60,8 +61,6 @@
         pydub
         scikit-learn
         scipy
-        noisereduce
-        flask_cors
         tqdm
       ]);
   in {
@@ -69,9 +68,11 @@
       name = "flask-ml-env";
 
       packages = [
-        pythonEnv
-        pkgs.ffmpeg # for pydub audio processing
-        pkgs.git # if you're pulling anything
+        pythonPkgs
+      ];
+
+      buildInputs = with pkgs; [
+        ffmpeg # for pydub audio processing
       ];
 
       shellHook = ''
