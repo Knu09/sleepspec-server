@@ -230,14 +230,14 @@ def classify(audio_path: Path) -> Classification:
     if post_count > pre_count:
         return Classification(
             sd=SD_Class.SD,
-            confidence_score=avg_confidence_score,  # 82.6%
+            confidence_score=avg_confidence_score,
             result="You are sleep deprived.",
             is_success=is_success,
         )
     else:
         return Classification(
             sd=SD_Class.NSD,
-            confidence_score=avg_confidence_score,  # 82.6%
+            confidence_score=avg_confidence_score,
             result="You are not sleep deprived.",
             is_success=is_success,
         )
