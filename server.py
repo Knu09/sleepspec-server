@@ -57,6 +57,7 @@ def Upload():
             jsonify(
                 {
                     "class": clf.sd.value,
+                    "confidence_score": clf.confidence_score,
                     "result": clf.result,
                 }
             ),
