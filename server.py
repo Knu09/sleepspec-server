@@ -70,7 +70,7 @@ def Upload():
 
 
 def predict_features(features, svm, pca):
-    # error when auidio is less than 15 secs
+    # error when audio is less than 15 secs
     if not features:
         print("!!!!!!!!!!error: no features accepted!!!!!!!!!!")
         is_success = False
@@ -213,7 +213,7 @@ def classify(audio_path: Path) -> Classification:
         test_sample = pickle.load(f)
 
     # print(type(test_sample), test_sample)
-    np.set_printoptions(threshold=np.inf)
+    # np.set_printoptions(threshold=np.inf)
     #
     # magnitude_strf = np.abs(test_sample)
     #
