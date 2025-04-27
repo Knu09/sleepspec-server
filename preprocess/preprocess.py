@@ -21,7 +21,7 @@ def check_audio_extension(input_file: Path):
 def load_audio_with_soundfile(input_file):
     y, sr = sf.read(input_file, always_2d=True)  # Ensure 2D output
     y = np.mean(y, axis=1)  # Convert stereo to mono
-    print(f"Sampeling rate: {sr} Hz")
+    print(f"Sampling rate: {sr} Hz")
     return y, sr
 
 
