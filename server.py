@@ -35,6 +35,15 @@ class Classification:
     is_success: bool
     # other fields here
 
+    def into_json(self):
+        return jsonify(
+            {
+                "class": self.sd.value,
+                "confidence_score": self.confidence_score,
+                "result": self.result,
+            }
+        )
+
 
 @app.route("/upload", methods=["POST"])
 def Upload():
@@ -54,13 +63,7 @@ def Upload():
         clf = classify(wav_file)
 
         return (
-            jsonify(
-                {
-                    "class": clf.sd.value,
-                    "confidence_score": clf.confidence_score,
-                    "result": clf.result,
-                }
-            ),
+            clf.into_json(),
             HTTPStatus.OK if clf.is_success else HTTPStatus.BAD_REQUEST,
         )
 
@@ -74,6 +77,7 @@ def predict_features(features, svm, pca):
     # error when audio is less than 15 secs
     if not features:
         print("!!!!!!!!!!error: no features accepted!!!!!!!!!!")
+        print("Make sure the audio recording length is atleast 15 seconds.")
         is_success = False
         return 0, 0, 0.0, is_success
     pre_counter = 0
