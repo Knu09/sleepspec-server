@@ -137,6 +137,9 @@ def predict_features(features, svm, pca):
         probs = svm.predict_proba(feature_pca)
         confidence = np.max(probs, axis=1)
 
+        assert(len(confidence) == 1)
+        confidence = confidence[0]
+
         print(f"confidence scorex: {confidence}")
 
         # Update counters based on prediction
@@ -169,10 +172,9 @@ def predict_features(features, svm, pca):
     print(f"Post (non-sleep-deprived) features counts: {post_counter}")
     print(f"average CFS: {avg_confidence_score}")
 
-    assert(len(avg_confidence_score) == 1)
     is_success = True
 
-    return pre_counter, post_counter, avg_confidence_score[0], is_success
+    return pre_counter, post_counter, avg_confidence_score, is_success
 
 
 def classify(audio_path: Path) -> Classification:
