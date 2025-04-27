@@ -265,6 +265,6 @@ def strf(
 
 if __name__ == "__main__":
     audio, fs = utils.audio_data(
-        "/users/baptistecaramiaux/work/projects/timbreproject_thoret/code\ and\ data/timbrestudies/ext/sounds/iverson1993whole/01.w.violin.aiff"
+        "/users/baptistecaramiaux/work/projects/timbreproject_thoret/code and data/timbrestudies/ext/sounds/iverson1993whole/01.w.violin.aiff"
     )
     spectrum(audio, fs)
