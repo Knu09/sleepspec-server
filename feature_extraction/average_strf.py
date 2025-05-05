@@ -85,33 +85,127 @@ avg_scale_rate = total_scale_rate / num_files
 avg_freq_rate = total_freq_rate / num_files
 avg_freq_scale = total_freq_scale / num_files
 
-# Plot the averaged results
-plotslib.plotStrfavgEqual(avg_scale_rate, avg_freq_rate,
-                          avg_freq_scale, cmap="viridis")
+# Save averaged arrays as numpy files
+np.save(output_dir / "avg_scale_rate.npy", avg_scale_rate)
+np.save(output_dir / "avg_freq_scale.npy", avg_freq_scale)
+np.save(output_dir / "avg_freq_rate.npy", avg_freq_rate)
 
-# Save the averaged results
-with open("avg_strf_data.pkl", "wb") as f:
-    pickle.dump(
-        {
-            "avg_scale_rate": avg_scale_rate,
-            "avg_freq_rate": avg_freq_rate,
-            "avg_freq_scale": avg_freq_scale,
-        },
-        f,
+# Create and save visualizaiton plots
+
+
+def save_strf_plots(scale_rate, freq_rate, freq_scale, output_path):
+    plt.style.use("seaborn")
+    plt.rcParams.update({"font.size": 12})
+    cmap = "viridis"
+
+    # Scale-Rate plot
+    plt.figure(figsize=(10, 6))
+    plt.imshow(
+        scale_rate,
+        aspect="auto",
+        origin="lower",
+        interpolation="gaussian",
+        cmap=cmap,
+        extent=[rates_vec[0], rates_vec[-1], scales_vec[0], scales_vec[-1]],
+    )
+    plt.colorbar(label="Amplitude (a.u.)")
+    plt.title("Scale-Rate Representation", pad=20)
+    plt.xlabel("Modulation Rate (Hz)", labelpad=10)
+    plt.ylabel("Spectral Scale (cycles/octave)", labelpad=10)
+    plt.grid(False)
+    plt.savefig(output_dir / "avg_scale_rate.png", dpi=300, bbox_inches="tight")
+    plt.close()
+
+    # Frequencies-Scale plot
+    plt.figure(figsize=(10, 6))
+    plt.imshow(
+        freq_scale,
+        aspect="auto",
+        origin="lower",
+        interpolation="gaussian",
+        cmap=cmap,
+        extent=[scales_vec[0], scales_vec[-1], 0, freq_scale.shape[0]],
     )
 
-# # averaged scale-rate representation
-# plt.figure(figsize=(8, 6))
-# plt.imshow(
-#     avg_scale_rate,
-#     aspect="auto",
-#     origin="lower",
-#     extent=(rates_vec[0], rates_vec[-1], scales_vec[0], scales_vec[-1]),
-#     interpolation="gaussian",
-#     cmap="viridis",
-# )
-# plt.colorbar(label="Modulation Energy (Amplitude)")
-# plt.xlabel("Temporal Modulation Rate (Hz)")
-# plt.ylabel("Spectral Modulation Scale (cyc/oct)")
-# plt.title("Averaged Rate-Scale Representation (avg_scale_rate)")
-# plt.show()
+    plt.colorbar(label="Amplitude (a.u.)")
+    plt.title("Frequency-Scale Representation", pad=20)
+    plt.xlabel("Scale (cycles/octaves)", labelpad=10)
+    plt.ylabel("Frequency (Hz)", labelpad=10)
+    plt.grid(False)
+
+    plt.savefig(output_dir / "freq_scale.png", dpi=300, bbox_inches="tight")
+    plt.close()
+
+    # Frequencies-Rates plot
+    plt.figure(figsize=(10, 6))
+    plt.imshow(
+        freq_rate,
+        aspect="auto",
+        origin="lower",
+        interpolation="gaussian",
+        cmap=cmap,
+        extent=[rate_values[0], rate_values[-1], scale_values[0], scale_values[-1]],
+    )
+
+    plt.colorbar(label="Amplitude (a.u.)")
+    plt.title("Frequency-Rate Representation", pad=20)
+    plt.xlabel("Rates (Hz)", labelpad=10)
+    plt.ylabel("Frequencies (Hz)", labelpad=10)
+    plt.grid(False)
+
+    plt.savefig(output_dir / "freq_rate.png", dpi=300, bbox_inches="tight")
+    plt.close()
+
+    # Combined Plot
+    fig, axes = plt.subplots(1, 3, figsize=(24, 6))
+    fig.suptitle("STRF Average Representations", y=1.02, fontsize=16)
+
+    # Scale-Rate
+    im0 = axes[0].imshow(
+        scale_rate,
+        aspect="auto",
+        origin="lower",
+        interpolation="gaussian",
+        cmap=cmap,
+        extent=[rates_vec[0], rates_vec[-1], scales_vec[0], scales_vec[-1]],
+    )
+    fig.colorbar(im0, ax=axes[0], shrink=0.8)
+    axes[0].set_title("Scale-Rate")
+    axes[0].set_xlabel("Rate (Hz)")
+    axes[0].set_ylabel("Scale (c/o)")
+
+    # Frequency-Rate
+    im1 = axes[1].imshow(
+        freq_rate,
+        aspect="auto",
+        origin="lower",
+        interpolation="gaussian",
+        cmap=cmap,
+        extent=[rates_vec[0], rates_vec[-1], 0, freq_rate.shape[0]],
+    )
+    fig.colorbar(im1, ax=axes[1], shrink=0.8)
+    axes[1].set_title("Frequency-Rate")
+    axes[1].set_xlabel("Rate (Hz)")
+    axes[1].set_ylabel("Frequency Channel")
+
+    # Frequency-Scale
+    im2 = axes[2].imshow(
+        freq_scale,
+        aspect="auto",
+        origin="lower",
+        interpolation="gaussian",
+        cmap=cmap,
+        extent=[scales_vec[0], scales_vec[-1], 0, freq_scale.shape[0]],
+    )
+    fig.colorbar(im2, ax=axes[2], shrink=0.8)
+    axes[2].set_title("Frequency-Scale")
+    axes[2].set_xlabel("Scale (c/o)")
+    axes[2].set_ylabel("Frequency Channel")
+
+    plt.tight_layout()
+    plt.savefig(output_dir / "strf_averages.png", dpi=300, bbox_inches="tight")
+    plt.close()
+
+
+save_strf_plots(avg_scale_rate, avg_freq_rate, avg_freq_scale, output_dir)
+
