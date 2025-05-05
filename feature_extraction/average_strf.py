@@ -6,9 +6,12 @@ import plotslib
 import pickle
 import matplotlib.pyplot as plt
 
+# Add output_dir for Flask app initialization
+output_dir = Path("feature_analysis/strf_plots")
+output_dir.mkdir(parents=True, exist_ok=True)
+
 # Define the directory containing the audio files
-# audio_dir = "../data"
-audio_dir = Path("../preprocess/preprocessed_audio/preprocess_audio_erik/")
+audio_dir = Path("preprocess/preprocessed_audio/processed_audio/")
 
 # Define the rates and scales vectors
 rates_vec: list[float] = [
@@ -97,18 +100,18 @@ with open("avg_strf_data.pkl", "wb") as f:
         f,
     )
 
-# averaged scale-rate representation
-plt.figure(figsize=(8, 6))
-plt.imshow(
-    avg_scale_rate,
-    aspect="auto",
-    origin="lower",
-    extent=(rates_vec[0], rates_vec[-1], scales_vec[0], scales_vec[-1]),
-    interpolation="gaussian",
-    cmap="viridis",
-)
-plt.colorbar(label="Modulation Energy (Amplitude)")
-plt.xlabel("Temporal Modulation Rate (Hz)")
-plt.ylabel("Spectral Modulation Scale (cyc/oct)")
-plt.title("Averaged Rate-Scale Representation (avg_scale_rate)")
-plt.show()
+# # averaged scale-rate representation
+# plt.figure(figsize=(8, 6))
+# plt.imshow(
+#     avg_scale_rate,
+#     aspect="auto",
+#     origin="lower",
+#     extent=(rates_vec[0], rates_vec[-1], scales_vec[0], scales_vec[-1]),
+#     interpolation="gaussian",
+#     cmap="viridis",
+# )
+# plt.colorbar(label="Modulation Energy (Amplitude)")
+# plt.xlabel("Temporal Modulation Rate (Hz)")
+# plt.ylabel("Spectral Modulation Scale (cyc/oct)")
+# plt.title("Averaged Rate-Scale Representation (avg_scale_rate)")
+# plt.show()
