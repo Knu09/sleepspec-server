@@ -13,199 +13,128 @@ output_dir.mkdir(parents=True, exist_ok=True)
 # Define the directory containing the audio files
 audio_dir = Path("preprocess/preprocessed_audio/processed_audio/")
 
-# Define the rates and scales vectors
-rates_vec: list[float] = [
-    -32,
-    -22.6,
-    -16,
-    -11.3,
-    -8,
-    -5.70,
-    -4,
-    -2,
-    -1,
-    -0.5,
-    -0.25,
-    0.25,
-    0.5,
-    1,
-    2,
-    4,
-    5.70,
-    8,
-    11.3,
-    16,
-    22.6,
-    32,
-]
-scales_vec = [0.71, 1.0, 1.41, 2.00, 2.83, 4.00, 5.66, 8.00]
 
-# Initialize accumulators for scale-rate, freq-rate, and freq-scale
-total_scale_rate = np.zeros((len(scales_vec), len(rates_vec)))
-total_freq_rate = np.zeros((128, len(rates_vec)))
-total_freq_scale = np.zeros((128, len(scales_vec)))
+class STRFAnalyzer:
+    def __init__(self):
+        self.rates_vec = [
+            -32, -22.6, -16, -11.3, -8, -5.70, -4, -2, -1, -0.5, -0.25,
+            0.25, 0.5, 1, 2, 4, 5.70, 8, 11.3, 16, 22.6, 32
+        ]
+        self.scales_vec = [0.71, 1.0, 1.41, 2.00, 2.83, 4.00, 5.66, 8.00]
 
-# Initialize a counter for the number of files
-num_files = 0
+    def compute_avg_strf(self, audio_dir: Path):
+        # Initialize accumulators for scale-rate, freq-rate, and freq-scale
+        total_scale_rate = np.zeros(
+            (len(self.scales_vec), len(self.rates_vec)))
+        total_freq_rate = np.zeros((128, len(self.rates_vec)))
+        total_freq_scale = np.zeros((128, len(self.scales_vec)))
 
-# Loop through all audio files in the directory
-for filename in audio_dir.iterdir():
-    if filename.suffix == ".wav":
-        # Construct the full file path
-        wav_file = audio_dir / filename
+        # Initialize a counter for the number of files
+        num_files = 0
 
-        # Load the audio file
-        audio, fs = utils.audio_data(wav_file)
+        # Loop through all audio files in the directory
+        for filename in audio_dir.iterdir():
+            if filename.suffix == ".wav":
+                # Construct the full file path
+                wav_file = audio_dir / filename
 
-        # Compute the STRF
-        strf, auditory_spectrogram_, mod_scale, scale_rate = auditory.strf(
-            audio, audio_fs=fs, duration=15, rates=rates_vec, scales=scales_vec
+                # Load the audio file
+                audio, fs = utils.audio_data(wav_file)
+
+                # Compute the STRF
+                strf, _, _, _ = auditory.strf(
+                    audio, audio_fs=fs, duration=15, rates=rates_vec, scales=scales_vec
+                )
+
+                # Compute the average STRF
+                magnitude_strf = np.abs(strf)
+
+                # Convert STRF to average vectors
+                avgvec = plotslib.strf2avgvec(magnitude_strf)
+                strf_scale_rate, strf_freq_rate, strf_freq_scale = plotslib.avgvec2strfavg(
+                    avgvec, nbScales=len(scales_vec), nbRates=len(rates_vec)
+                )
+
+                # Accumulate the results
+                total_scale_rate += strf_scale_rate
+                total_freq_rate += strf_freq_rate
+                total_freq_scale += strf_freq_scale
+
+                # Increment the file counter
+                num_files += 1
+
+        # Average the results
+        return (
+            total_scale_rate / num_files,
+            total_freq_rate / num_files,
+            total_freq_scale / num_files
         )
 
-        # Compute the average STRF
-        magnitude_strf = np.abs(strf)
-        real_valued_strf = np.mean(magnitude_strf, axis=0)
+    def save_plots(self, scale_rate, freq_rate, freq_scale, output_dir: Path):
+        """Save STRF visualizations"""
+        output_dir.mkdir(parents=True, exist_ok=True)
+        plt.style.use("seaborn")
+        plt.rcParams.update({"font.size": 12})
 
-        # Convert STRF to average vectors
-        avgvec = plotslib.strf2avgvec(strf)
-        strf_scale_rate, strf_freq_rate, strf_freq_scale = plotslib.avgvec2strfavg(
-            avgvec, nbScales=len(scales_vec), nbRates=len(rates_vec)
+        # Individual plots
+        self._save_single_plot(
+            scale_rate, output_dir / "avg_scale_rate.png",
+            "Scale-Rate Representation", "Modulation Rate (Hz)", "Spectral Scale (cycles/octave)",
+            [self.rates_vec[0], self.rates_vec[-1], self.scales_vec[0], self.scales_vec[-1]]
+        )
+        
+        self._save_single_plot(
+            freq_rate, output_dir / "avg_freq_rate.png",
+            "Frequency-Rate Representation", "Rate (Hz)", "Frequency Channel",
+            [self.rates_vec[0], self.rates_vec[-1], 0, freq_rate.shape[0]]
+        )
+        
+        self._save_single_plot(
+            freq_scale, output_dir / "avg_freq_scale.png",
+            "Frequency-Scale Representation", "Scale (cycles/octave)", "Frequency Channel",
+            [self.scales_vec[0], self.scales_vec[-1], 0, freq_scale.shape[0]]
         )
 
-        # Accumulate the results
-        total_scale_rate += strf_scale_rate
-        total_freq_rate += strf_freq_rate
-        total_freq_scale += strf_freq_scale
+        # Combined plot
+        self._save_combined_plot(scale_rate, freq_rate, freq_scale, output_dir / "strf_averages.png")
 
-        # Increment the file counter
-        num_files += 1
+    def _save_single_plot(self, data, path, title, xlabel, ylabel, extent):
+        plt.figure(figsize=(10, 6))
+        plt.imshow(
+            data, aspect="auto", origin="lower", 
+            interpolation="gaussian", cmap="viridis", extent=extent
+        )
+        plt.colorbar(label="Amplitude (a.u.)")
+        plt.title(title, pad=20)
+        plt.xlabel(xlabel, labelpad=10)
+        plt.ylabel(ylabel, labelpad=10)
+        plt.grid(False)
+        plt.savefig(path, dpi=300, bbox_inches="tight")
+        plt.close()
 
-# Average the results
-avg_scale_rate = total_scale_rate / num_files
-avg_freq_rate = total_freq_rate / num_files
-avg_freq_scale = total_freq_scale / num_files
-
-# Save averaged arrays as numpy files
-np.save(output_dir / "avg_scale_rate.npy", avg_scale_rate)
-np.save(output_dir / "avg_freq_scale.npy", avg_freq_scale)
-np.save(output_dir / "avg_freq_rate.npy", avg_freq_rate)
-
-# Create and save visualizaiton plots
-
-
-def save_strf_plots(scale_rate, freq_rate, freq_scale, output_path):
-    plt.style.use("seaborn")
-    plt.rcParams.update({"font.size": 12})
-    cmap = "viridis"
-
-    # Scale-Rate plot
-    plt.figure(figsize=(10, 6))
-    plt.imshow(
-        scale_rate,
-        aspect="auto",
-        origin="lower",
-        interpolation="gaussian",
-        cmap=cmap,
-        extent=[rates_vec[0], rates_vec[-1], scales_vec[0], scales_vec[-1]],
-    )
-    plt.colorbar(label="Amplitude (a.u.)")
-    plt.title("Scale-Rate Representation", pad=20)
-    plt.xlabel("Modulation Rate (Hz)", labelpad=10)
-    plt.ylabel("Spectral Scale (cycles/octave)", labelpad=10)
-    plt.grid(False)
-    plt.savefig(output_dir / "avg_scale_rate.png", dpi=300, bbox_inches="tight")
-    plt.close()
-
-    # Frequencies-Scale plot
-    plt.figure(figsize=(10, 6))
-    plt.imshow(
-        freq_scale,
-        aspect="auto",
-        origin="lower",
-        interpolation="gaussian",
-        cmap=cmap,
-        extent=[scales_vec[0], scales_vec[-1], 0, freq_scale.shape[0]],
-    )
-
-    plt.colorbar(label="Amplitude (a.u.)")
-    plt.title("Frequency-Scale Representation", pad=20)
-    plt.xlabel("Scale (cycles/octaves)", labelpad=10)
-    plt.ylabel("Frequency (Hz)", labelpad=10)
-    plt.grid(False)
-
-    plt.savefig(output_dir / "freq_scale.png", dpi=300, bbox_inches="tight")
-    plt.close()
-
-    # Frequencies-Rates plot
-    plt.figure(figsize=(10, 6))
-    plt.imshow(
-        freq_rate,
-        aspect="auto",
-        origin="lower",
-        interpolation="gaussian",
-        cmap=cmap,
-        extent=[rate_values[0], rate_values[-1], scale_values[0], scale_values[-1]],
-    )
-
-    plt.colorbar(label="Amplitude (a.u.)")
-    plt.title("Frequency-Rate Representation", pad=20)
-    plt.xlabel("Rates (Hz)", labelpad=10)
-    plt.ylabel("Frequencies (Hz)", labelpad=10)
-    plt.grid(False)
-
-    plt.savefig(output_dir / "freq_rate.png", dpi=300, bbox_inches="tight")
-    plt.close()
-
-    # Combined Plot
-    fig, axes = plt.subplots(1, 3, figsize=(24, 6))
-    fig.suptitle("STRF Average Representations", y=1.02, fontsize=16)
-
-    # Scale-Rate
-    im0 = axes[0].imshow(
-        scale_rate,
-        aspect="auto",
-        origin="lower",
-        interpolation="gaussian",
-        cmap=cmap,
-        extent=[rates_vec[0], rates_vec[-1], scales_vec[0], scales_vec[-1]],
-    )
-    fig.colorbar(im0, ax=axes[0], shrink=0.8)
-    axes[0].set_title("Scale-Rate")
-    axes[0].set_xlabel("Rate (Hz)")
-    axes[0].set_ylabel("Scale (c/o)")
-
-    # Frequency-Rate
-    im1 = axes[1].imshow(
-        freq_rate,
-        aspect="auto",
-        origin="lower",
-        interpolation="gaussian",
-        cmap=cmap,
-        extent=[rates_vec[0], rates_vec[-1], 0, freq_rate.shape[0]],
-    )
-    fig.colorbar(im1, ax=axes[1], shrink=0.8)
-    axes[1].set_title("Frequency-Rate")
-    axes[1].set_xlabel("Rate (Hz)")
-    axes[1].set_ylabel("Frequency Channel")
-
-    # Frequency-Scale
-    im2 = axes[2].imshow(
-        freq_scale,
-        aspect="auto",
-        origin="lower",
-        interpolation="gaussian",
-        cmap=cmap,
-        extent=[scales_vec[0], scales_vec[-1], 0, freq_scale.shape[0]],
-    )
-    fig.colorbar(im2, ax=axes[2], shrink=0.8)
-    axes[2].set_title("Frequency-Scale")
-    axes[2].set_xlabel("Scale (c/o)")
-    axes[2].set_ylabel("Frequency Channel")
-
-    plt.tight_layout()
-    plt.savefig(output_dir / "strf_averages.png", dpi=300, bbox_inches="tight")
-    plt.close()
-
-
-save_strf_plots(avg_scale_rate, avg_freq_rate, avg_freq_scale, output_dir)
-
+    def _save_combined_plot(self, scale_rate, freq_rate, freq_scale, path):
+        fig, axes = plt.subplots(1, 3, figsize=(24, 6))
+        fig.suptitle("STRF Average Representations", y=1.02, fontsize=16)
+        
+        plots = [
+            (scale_rate, "Scale-Rate", "Rate (Hz)", "Scale (c/o)", 
+             [self.rates_vec[0], self.rates_vec[-1], self.scales_vec[0], self.scales_vec[-1]]),
+            (freq_rate, "Frequency-Rate", "Rate (Hz)", "Frequency Channel",
+             [self.rates_vec[0], self.rates_vec[-1], 0, freq_rate.shape[0]]),
+            (freq_scale, "Frequency-Scale", "Scale (c/o)", "Frequency Channel",
+             [self.scales_vec[0], self.scales_vec[-1], 0, freq_scale.shape[0]])
+        ]
+        
+        for ax, (data, title, xlabel, ylabel, extent) in zip(axes, plots):
+            im = ax.imshow(
+                data, aspect="auto", origin="lower",
+                interpolation="gaussian", cmap="viridis", extent=extent
+            )
+            fig.colorbar(im, ax=ax, shrink=0.8)
+            ax.set_title(title)
+            ax.set_xlabel(xlabel)
+            ax.set_ylabel(ylabel)
+        
+        plt.tight_layout()
+        plt.savefig(path, dpi=300, bbox_inches="tight")
+        plt.close()
