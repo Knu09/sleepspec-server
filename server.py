@@ -1,3 +1,4 @@
+from feature_extraction.average_strf import STRFAnalyzer
 from feature_extraction.run_extraction import feature_extract_segments
 from preprocess.preprocess import preprocess_audio
 import sys
@@ -20,6 +21,12 @@ sys.path.append("feature_extraction/")
 app = Flask(__name__)
 CORS(app)
 uploads_path = "tmp/uploads"
+
+strf_analyzer = STRFAnalyzer()
+
+@app.route("/")
+def home():
+    return "Flask server is running."
 
 
 class SD_Class(Enum):
@@ -137,7 +144,7 @@ def predict_features(features, svm, pca):
         probs = svm.predict_proba(feature_pca)
         confidence = np.max(probs, axis=1)
 
-        assert(len(confidence) == 1)
+        assert len(confidence) == 1
         confidence = confidence[0]
 
         print(f"confidence scorex: {confidence}")
@@ -208,7 +215,15 @@ def classify(audio_path: Path) -> Classification:
     output_dir_processed = Path("preprocess/preprocessed_audio/processed_audio/")
     output_dir_features = Path("feature_extraction/extracted_features/feature")
 
+    # Preprocess
     segments, sr = preprocess_audio(audio_path, output_dir_processed)
+
+    # Compute and save STRFs
+    avg_scale_rate, avg_freq_rate, avg_freq_scale = strf_analyzer.compute_avg_strf(output_dir_processed)
+    strf_analyzer.save_plots(
+        avg_scale_rate, avg_freq_rate, avg_freq_scale,
+        Path("feature_analysis/strf_plots")
+    )
 
     # Print details
     print(f"Number of segments: {len(segments)}")
@@ -216,6 +231,7 @@ def classify(audio_path: Path) -> Classification:
 
     # Feature Extraction
     features = feature_extract_segments(segments, output_dir_features, sr)
+    print("Feature Extraction Complete.")
 
     # test_sample = pickle.load(test_sample_path)
     with open(test_sample_path, "rb") as f:
