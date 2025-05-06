@@ -5,6 +5,7 @@ import numpy as np
 import noisereduce as nr
 from pydub import AudioSegment
 from pydub.silence import split_on_silence
+import shutil
 
 
 def check_audio_extension(input_file: Path):
@@ -77,8 +78,13 @@ def preprocess_audio(
         int: The sampling rate of the processed segments.
     """
 
-    output_dir = get_unique_output_dir(output_dir)
     input_file = check_audio_extension(input_file)
+
+    # Output of subdirectory
+    segmented_dir = Path(output_dir) / "segmented_audio"
+    if segmented_dir.exists():
+        shutil.rmtree(segmented_dir)
+    segmented_dir.mkdir(parents=True, exist_ok=True)
 
     # Remove silence from the audio
     audio_no_silence = remove_silence(input_file)
@@ -127,7 +133,7 @@ def preprocess_audio(
             # Save segment to disk if output_dir is provided
             if output_dir:
                 sf.write(
-                    output_dir / f"{audio_filename}_segment_{i + 1}.wav",
+                    segmented_dir / f"{audio_filename}_segment_{i + 1}.wav",
                     segment,
                     sr,
                 )
