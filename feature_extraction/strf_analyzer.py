@@ -4,6 +4,8 @@ from feature_extraction import utils
 from feature_extraction import auditory
 from feature_extraction import plotslib
 import pickle
+import matplotlib
+matplotlib.use("Agg")  # Use non-GUI backend
 import matplotlib.pyplot as plt
 
 # Add output_dir for Flask app initialization
