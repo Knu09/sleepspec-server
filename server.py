@@ -213,11 +213,10 @@ def classify(audio_path: Path) -> Classification:
     svm = data["svm"]
     pca = data["pca"]
     # Define the output directory, if necessary to be stored
-    output_dir_processed = Path("preprocess/preprocessed_audio/processed_audio/")
+    output_dir_processed = Path(
+        "preprocess/preprocessed_audio/processed_audio/")
     output_dir_features = Path("feature_extraction/extracted_features/feature")
-    output_dir_segmented = Path(
-        "preprocess/preprocessed_audio/processed_audio/segmented_audio/"
-    )
+    output_dir_segmented = output_dir_processed / "segmented_audio"
 
     # Preprocess
     segments, sr = preprocess_audio(audio_path, output_dir_processed)
@@ -240,7 +239,6 @@ def classify(audio_path: Path) -> Classification:
     # Feature Extraction
     features = feature_extract_segments(segments, output_dir_features, sr)
     print("Feature Extraction Complete.")
-
 
     # test_sample = pickle.load(test_sample_path)
     with open(test_sample_path, "rb") as f:
