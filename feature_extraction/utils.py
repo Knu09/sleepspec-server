@@ -11,6 +11,7 @@ import math
 # import aifc
 import scipy.io.wavfile as wav
 import matplotlib.pylab as plt
+from pathlib import Path
 
 
 def raised_cosine(x, mu, s):
@@ -3463,8 +3464,8 @@ def get_dissimalrity_matrix(folder_path="../ext/data/"):
     return np.loadtxt(folder_path + "/dissimilarity_matrix.txt")
 
 
-def audio_data(filename):
-    if filename.endswith(".wav"):
+def audio_data(filename: Path):
+    if filename.suffix == ".wav":
         fs, audio = wav.read(filename)
         if audio.dtype != np.float32:
             audio = audio / np.max(np.abs(audio))
