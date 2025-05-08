@@ -53,6 +53,13 @@ class Classification:
             }
         )
 
+
+@app.route('/plots/<path:filename>')
+def get_plot(filename):
+    print(f"Requesting plot: {filename}")
+    path = os.path.abspath('feature_analysis/strf_plots/')
+    return send_from_directory(path, filename)
+
 @app.route("/upload", methods=["POST"])
 def Upload():
     if "audio" not in request.files:
@@ -79,12 +86,6 @@ def Upload():
         jsonify({"error": "There was a problem saving the file"}),
         HTTPStatus.INTERNAL_SERVER_ERROR,
     )
-
-@app.route('/plots/<path:filename>')
-def get_plot(filename):
-    print(f"Requesting plot: {filename}")
-    path = os.path.abspath('feature_analysis/strf_plots/')
-    return send_from_directory(path, filename)
 
 
 def predict_features(features, svm, pca):
