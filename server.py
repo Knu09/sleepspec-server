@@ -42,6 +42,7 @@ class Classification:
     confidence_score: float
     result: str
     is_success: bool
+    # segments: list[Path]
     # other fields here
 
     def into_json(self):
@@ -50,6 +51,7 @@ class Classification:
                 "class": self.sd.value,
                 "confidence_score": self.confidence_score,
                 "result": self.result,
+                # "segments": self.segments
             }
         )
 
@@ -240,6 +242,7 @@ def classify(audio_path: Path) -> Classification:
 
     # Print details
     print(f"Number of segments: {len(segments)}")
+    print(type(segments), segments[0])
     print(f"Sampling rate: {sr} Hz")
 
     # Feature Extraction
