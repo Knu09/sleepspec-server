@@ -158,6 +158,7 @@ def predict_features(features, svm, pca):
         print(f"confidence scorex: {confidence}")
 
         # Update counters based on prediction
+        print(f"SVM classes: {svm.classes_}")
         if y_pred == svm.classes_[0]:
             post_counter += 1
         elif y_pred == svm.classes_[1]:
