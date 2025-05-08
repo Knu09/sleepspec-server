@@ -7,6 +7,7 @@ __pycache__/
 *.so
     
 # directories
+feature_analysis/strf_plots/
 feature_extraction/data/
 feature_extraction/data_audio/
 preprocess/preprocessed_audio/
