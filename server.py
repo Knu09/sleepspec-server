@@ -21,7 +21,7 @@ sys.path.append("feature_extraction/")
 
 app = Flask(__name__)
 CORS(app)
-uploads_path = "tmp/uploads"
+uploads_path = Path("tmp/uploads")
 
 strf_analyzer = STRFAnalyzer()
 
@@ -67,11 +67,9 @@ def Upload():
 
     audio_file = request.files["audio"]
     if audio_file.filename:
-        Path(uploads_path).mkdir(parents=True, exist_ok=True)
+        uploads_path.mkdir(parents=True, exist_ok=True)
 
-        uploads = Path(uploads_path)
-
-        file_path = uploads / secure_filename(audio_file.filename)
+        file_path = uploads_path / secure_filename(audio_file.filename)
         audio_file.save(file_path)
 
         wav_file = convertWAV(file_path)
