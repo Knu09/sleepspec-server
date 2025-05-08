@@ -3,7 +3,7 @@ from feature_extraction.run_extraction import feature_extract_segments
 from preprocess.preprocess import preprocess_audio
 import sys
 from werkzeug.utils import secure_filename
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 from pydub import AudioSegment
 from pathlib import Path
@@ -14,6 +14,7 @@ import pickle
 import numpy as np
 from scipy.special import softmax
 from sklearn.metrics import balanced_accuracy_score
+import os
 
 sys.path.append("preprocess/")
 sys.path.append("feature_extraction/")
@@ -52,7 +53,6 @@ class Classification:
             }
         )
 
-
 @app.route("/upload", methods=["POST"])
 def Upload():
     if "audio" not in request.files:
@@ -79,6 +79,12 @@ def Upload():
         jsonify({"error": "There was a problem saving the file"}),
         HTTPStatus.INTERNAL_SERVER_ERROR,
     )
+
+@app.route('/plots/<path:filename>')
+def get_plot(filename):
+    print(f"Requesting plot: {filename}")
+    path = os.path.abspath('feature_analysis/strf_plots/')
+    return send_from_directory(path, filename)
 
 
 def predict_features(features, svm, pca):
