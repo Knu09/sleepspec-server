@@ -124,7 +124,8 @@ def preprocess_audio(
     segment_samples = segment_length * sr
 
     # Split and save segments
-    segments = []
+    segments, files = [], []
+
     for i, start in enumerate(range(0, len(y_normalized), segment_samples)):
         end = start + segment_samples
         segment = y_normalized[start:end]
@@ -132,13 +133,16 @@ def preprocess_audio(
             segments.append(segment)
             # Save segment to disk if output_dir is provided
             if output_dir:
+                file = segmented_dir / f"{audio_filename}_segment_{i + 1}.wav"
+                files.append(file.name)
                 sf.write(
-                    segmented_dir / f"{audio_filename}_segment_{i + 1}.wav",
+                    file,
                     segment,
                     sr,
                 )
 
-    return segments, sr
+    return segments, sr, files
+
 
     # # Split and save segments
     # for i, start in enumerate(range(1, total_samples, segment_samples)):
