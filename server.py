@@ -149,11 +149,21 @@ def predict_features(features, svm, pca):
         # logits = np.array([1.0, 0.1])
         # probs = softmax(logits)
         # confidence = np.max(probs)
-        probs = svm.predict_proba(feature_pca)
-        confidence = np.max(probs, axis=1)
+        decision_scores = svm.decision_function(feature_pca)
+        confidence = np.abs(decision_scores)
+        # min_dist, max_dist = np.min(decision_scores), np.max(decision_scores)
+        #
+        # if max_dist == min_dist:
+        #     confidence = 0.5  # neutral confidence if all scores are identical
+        # else:
+        #     confidence = (decision_scores - min_dist) / (max_dist - min_dist)
+        #
+        # confidence = confidence[0]
 
         assert len(confidence) == 1
         confidence = confidence[0]
+
+        # This is where the computation of Confidence Score occurs
 
         print(f"confidence scorex: {confidence}")
 
@@ -185,7 +195,7 @@ def predict_features(features, svm, pca):
         # avg_confidence_score = np.max(probs)
 
     print(f"Pre (non-sleep-deprived) features counts: {pre_counter}")
-    print(f"Post (non-sleep-deprived) features counts: {post_counter}")
+    print(f"Post (sleep-deprived) features counts: {post_counter}")
     print(f"average CFS: {avg_confidence_score}")
 
     is_success = True
