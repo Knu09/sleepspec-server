@@ -42,7 +42,6 @@ class Classification:
     sd: SD_Class
     confidence_score: float
     result: str
-    segments: list[str]
     is_success: bool
     # other fields here
 
@@ -52,7 +51,6 @@ class Classification:
                 "class": self.sd.value,
                 "confidence_score": self.confidence_score,
                 "result": self.result,
-                "segments": self.segments
             }
         )
 
@@ -249,7 +247,7 @@ def classify(audio_path: Path) -> Classification:
     output_dir_segmented = output_dir_processed / "segmented_audio"
 
     # Preprocess
-    segments, sr, segment_files = preprocess_audio(audio_path, output_dir_processed)
+    segments, sr = preprocess_audio(audio_path, output_dir_processed)
 
     # Compute and save STRFs
     avg_scale_rate, avg_freq_rate, avg_freq_scale = strf_analyzer.compute_avg_strf(
@@ -294,7 +292,6 @@ def classify(audio_path: Path) -> Classification:
             sd=SD_Class.SD,
             confidence_score=avg_confidence_score,
             result="You are sleep deprived.",
-            segments=segment_files,
             is_success=is_success,
         )
     else:
@@ -302,7 +299,6 @@ def classify(audio_path: Path) -> Classification:
             sd=SD_Class.NSD,
             confidence_score=avg_confidence_score,
             result="You are not sleep deprived.",
-            segments=segment_files,
             is_success=is_success,
         )
 
