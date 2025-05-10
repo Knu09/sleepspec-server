@@ -165,7 +165,7 @@ def predict_features(features, svm, pca):
 
         # This is where the computation of Confidence Score occurs
 
-        print(f"confidence scorex: {confidence}")
+        print(f"confidence score: {confidence}")
 
         # Update counters based on prediction
         print(f"SVM classes: {svm.classes_}")
