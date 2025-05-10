@@ -1,9 +1,11 @@
+import io
+import zipfile
 from feature_extraction.strf_analyzer import STRFAnalyzer
 from feature_extraction.run_extraction import feature_extract_segments
 from preprocess.preprocess import preprocess_audio
 import sys
 from werkzeug.utils import secure_filename
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, request, jsonify, send_from_directory, send_file
 from flask_cors import CORS
 from pydub import AudioSegment
 from pathlib import Path
@@ -14,7 +16,6 @@ import pickle
 import numpy as np
 from scipy.special import softmax
 from sklearn.metrics import balanced_accuracy_score
-import os
 
 sys.path.append("preprocess/")
 sys.path.append("feature_extraction/")
@@ -59,8 +60,29 @@ class Classification:
 @app.route('/plots/<path:filename>')
 def get_plot(filename):
     print(f"Requesting plot: {filename}")
-    path = os.path.abspath('feature_analysis/strf_plots/')
+    path = Path('feature_analysis/strf_plots/').resolve(strict=True)
     return send_from_directory(path, filename)
+
+@app.route('/segments')
+def Segments():
+    segments_dir = Path('preprocess/preprocessed_audio/processed_audio/segmented_audio')
+
+    # Construct an in-memory zip file
+    zip_buffer = io.BytesIO()
+    with zipfile.ZipFile(zip_buffer, 'w') as zip_file:
+        for _, file in enumerate(segments_dir.glob('segment_*.wav')):
+            zip_file.write(file, arcname=file.name)
+
+    # reset buffer pointer back to 0
+    zip_buffer.seek(0)
+
+    return send_file(
+        zip_buffer,
+        mimetype='application/zip',
+        download_name='segments.zip',
+        as_attachment=True,
+    )
+
 
 @app.route("/upload", methods=["POST"])
 def Upload():
