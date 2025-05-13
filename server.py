@@ -51,7 +51,7 @@ class Classification:
         return jsonify(
             {
                 "class": self.sd.value,
-                "classes": map(lambda c: c.value, self.classes),
+                "classes": [c.value for c in self.classes],
                 "scores": self.scores,
                 "confidence_score": self.confidence_score,
                 "result": self.result,
