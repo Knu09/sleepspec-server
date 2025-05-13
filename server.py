@@ -40,6 +40,8 @@ class SD_Class(Enum):
 @dataclass
 class Classification:
     sd: SD_Class
+    classes: list[SD_Class]
+    scores: list[float]
     confidence_score: float
     result: str
     is_success: bool
@@ -49,6 +51,8 @@ class Classification:
         return jsonify(
             {
                 "class": self.sd.value,
+                "classes": map(lambda c: c.value, self.classes),
+                "scores": self.scores,
                 "confidence_score": self.confidence_score,
                 "result": self.result,
             }
@@ -118,6 +122,8 @@ def predict_features(features, svm, pca):
     pre_counter = 0
     post_counter = 0
     avg_confidence_score = 0.0
+    classes = []
+    confidence_scores = []
 
     for i, feature in enumerate(features):
         print(f"Processing feature {i + 1}")
@@ -183,6 +189,8 @@ def predict_features(features, svm, pca):
         assert len(confidence) == 1
         confidence = confidence[0]
 
+        confidence_scores.append(confidence)
+
         # This is where the computation of Confidence Score occurs
 
         print(f"confidence scorex: {confidence}")
@@ -191,8 +199,10 @@ def predict_features(features, svm, pca):
         print(f"SVM classes: {svm.classes_}")
         if y_pred == svm.classes_[0]:
             post_counter += 1
+            classes.append(SD_Class.SD)
         elif y_pred == svm.classes_[1]:
             pre_counter += 1
+            classes.append(SD_Class.NSD)
 
         print(f"Predicted class for feature {i + 1}: {y_pred}")
         print(f"Confidence score: {confidence}")
@@ -220,7 +230,7 @@ def predict_features(features, svm, pca):
 
     is_success = True
 
-    return pre_counter, post_counter, avg_confidence_score, is_success
+    return pre_counter, post_counter, classes, confidence_scores, avg_confidence_score, is_success
 
 
 def classify(audio_path: Path) -> Classification:
@@ -291,7 +301,7 @@ def classify(audio_path: Path) -> Classification:
     # test_sample = np.mean(magnitude_strf, axis=0)
     # print(test_sample["strf"])
 
-    pre_count, post_count, avg_confidence_score, is_success = predict_features(
+    pre_count, post_count, classes, confidence_scores, avg_confidence_score, is_success = predict_features(
         features, svm, pca
     )
 
@@ -300,6 +310,8 @@ def classify(audio_path: Path) -> Classification:
     if post_count > pre_count:
         return Classification(
             sd=SD_Class.SD,
+            scores=confidence_scores,
+            classes=classes,
             confidence_score=avg_confidence_score,
             result="You are sleep deprived.",
             is_success=is_success,
@@ -307,6 +319,8 @@ def classify(audio_path: Path) -> Classification:
     else:
         return Classification(
             sd=SD_Class.NSD,
+            scores=confidence_scores,
+            classes=classes,
             confidence_score=avg_confidence_score,
             result="You are not sleep deprived.",
             is_success=is_success,
