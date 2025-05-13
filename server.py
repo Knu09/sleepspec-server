@@ -172,28 +172,33 @@ def predict_features(features, svm, pca):
         #         "SVM model does not support decision_function or predict_proba."
         #     )
 
+        # This is where the computation of Confidence Score occurs
         # logits = np.array([1.0, 0.1])
         # probs = softmax(logits)
         # confidence = np.max(probs)
+
+        # probs = svm.predict_proba(feature_pca)
+        # confidence = np.max(probs) # probability of the predicted class
+
         decision_scores = svm.decision_function(feature_pca)
         confidence = np.abs(decision_scores)
+
+        assert len(confidence) == 1
+        confidence = confidence[0]
+
+        # decision_scores = svm.decision_function(feature_pca)[0]
         # min_dist, max_dist = np.min(decision_scores), np.max(decision_scores)
         #
         # if max_dist == min_dist:
         #     confidence = 0.5  # neutral confidence if all scores are identical
         # else:
         #     confidence = (decision_scores - min_dist) / (max_dist - min_dist)
-        #
-        # confidence = confidence[0]
 
-        assert len(confidence) == 1
-        confidence = confidence[0]
+        # confidence = confidence
 
         confidence_scores.append(confidence)
 
-        # This is where the computation of Confidence Score occurs
-
-        print(f"confidence scorex: {confidence}")
+        print(f"confidence score: {confidence}")
 
         # Update counters based on prediction
         print(f"SVM classes: {svm.classes_}")
