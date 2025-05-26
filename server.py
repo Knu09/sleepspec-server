@@ -59,22 +59,21 @@ class Classification:
         )
 
 
-@app.route('/plots/<path:filename>')
+@app.route("/plots/<path:filename>")
 def get_plot(filename):
     print(f"Requesting plot: {filename}")
-    path = Path('feature_analysis/strf_plots/').resolve(strict=True)
+    path = Path("feature_analysis/strf_plots/").resolve(strict=True)
     return send_from_directory(path, filename)
 
 
-@app.route('/segments')
+@app.route("/segments")
 def Segments():
-    segments_dir = Path(
-        'preprocess/preprocessed_audio/processed_audio/segmented_audio')
+    segments_dir = Path("preprocess/preprocessed_audio/processed_audio/segmented_audio")
 
     # Construct an in-memory zip file
     zip_buffer = io.BytesIO()
-    with zipfile.ZipFile(zip_buffer, 'w') as zip_file:
-        for _, file in enumerate(segments_dir.glob('segment_*.wav')):
+    with zipfile.ZipFile(zip_buffer, "w") as zip_file:
+        for _, file in enumerate(segments_dir.glob("segment_*.wav")):
             zip_file.write(file, arcname=file.name)
 
     # reset buffer pointer back to 0
@@ -82,8 +81,8 @@ def Segments():
 
     return send_file(
         zip_buffer,
-        mimetype='application/zip',
-        download_name='segments.zip',
+        mimetype="application/zip",
+        download_name="segments.zip",
         as_attachment=True,
     )
 
@@ -115,131 +114,111 @@ def Upload():
 
 
 def predict_features(features, svm, pca):
-    # error when audio is less than 15 secs
     if not features:
-        print("!!!!!!!!!!error: no features accepted!!!!!!!!!!")
-        print("Make sure the audio recording length is atleast 15 seconds.")
+        print("!!!!!!!!!! Error: no features accepted !!!!!!!!!!")
+        print("Make sure the audio recording length is at least 15 seconds.")
         is_success = False
-        return 0, 0, 0.0, is_success
+        return 0, 0, [], [], 0.0, is_success
 
     nsd_counter = 0
     sd_counter = 0
     sum_nsd_prob = 0.0
     sum_sd_prob = 0.0
-    avg_confidence_score = 0.0
     classes = []
     decision_scores = []
-    avg_decision_score = 0.0
     confidence_scores = []
-    detection_log = []
 
     for i, feature in enumerate(features):
-        print(f"Processing feature {i + 1}")
+        print(f"\nProcessing feature {i + 1}")
 
-        # Flatten and normalize the feature array
-        feature_flattened = np.asarray(feature).flatten()
-        feature_normalized = (
-            feature_flattened / np.max(np.abs(feature_flattened))
-            if np.max(np.abs(feature_flattened)) != 0
-            else feature_flattened
+        # Flatten and normalize
+        feature_flat = np.asarray(feature).flatten()
+        feature_norm = (
+            feature_flat / np.max(np.abs(feature_flat))
+            if np.max(np.abs(feature_flat)) != 0
+            else feature_flat
         )
-
-        # Reshape the feature array for PCA transformation
-        feature_reshaped = feature_normalized.reshape(1, -1)
+        feature_reshaped = feature_norm.reshape(1, -1)
 
         expected_features = pca.components_.shape[1]
-        if feature_flattened.shape[0] != expected_features:
+        if feature_flat.shape[0] != expected_features:
             raise ValueError(
-                f"Feature mismatch! Expected {expected_features} features, but got {
-                    feature_flattened.shape[0]
-                }."
+                f"Feature mismatch! Expected {expected_features}, got {feature_flat.shape[0]}."
             )
 
-        # Apply PCA transformation
+        # PCA transformation
         feature_pca = pca.transform(feature_reshaped)
 
-        # Predict label
+        # Prediction
         y_pred = svm.predict(feature_pca)
-        predicted_label = SD_Class.SD.value if y_pred == svm.classes_[
-            0] else SD_Class.NSD.value
+        predicted_label = y_pred[0]
+        print(f"Predicted class for feature {i + 1}: {predicted_label}")
+        print(f"SVM classes: {svm.classes_}")
 
-        # Get decision score (distance to hyperplane)
+        # Decision score (distance from hyperplane)
         decision_score = abs(float(svm.decision_function(feature_pca)[0]))
         decision_scores.append(decision_score)
-        avg_decision_score += decision_score
+        print(f"Decision Score: {decision_score:.4f}")
 
-        # decision_scores = svm.decision_function(feature_pca)[0]
-        # min_dist, max_dist = np.min(decision_scores), np.max(decision_scores)
-        #
-        # if max_dist == min_dist:
-        #     confidence = 0.5  # neutral confidence if all scores are identical
-        # else:
-        #     confidence = (decision_scores - min_dist) / (max_dist - min_dist)
-
-        # Get probability scores
+        # Confidence (probability) score
+        sd_prob, nsd_prob = 0.0, 0.0
         if hasattr(svm, "predict_proba"):
             probs = svm.predict_proba(feature_pca)[0]
-            nsd_prob = float(probs[svm.classes_ == 1])
-            sd_prob = float(probs[svm.classes_ == 0])
-        else:
-            sd_prob = sd_prob = 0.0    # if not available
+            sd_index = np.where(svm.classes_ == SD_Class.SD.value)[0][0]
+            nsd_index = np.where(svm.classes_ == SD_Class.NSD.value)[0][0]
+            sd_prob = float(probs[sd_index])
+            nsd_prob = float(probs[nsd_index])
 
-        sum_nsd_prob /= nsd_counter
-        sum_sd_prob /= sd_counter
-
-        # Update counters based on prediction
-        print(f"SVM classes: {svm.classes_}")
-        if y_pred == svm.classes_[0]:
+        # Assign class and count
+        if predicted_label == SD_Class.SD.value:
             sd_counter += 1
+            sum_sd_prob += sd_prob
             classes.append(SD_Class.SD)
-        elif y_pred == svm.classes_[1]:
-            nsd_counter += 1
-            classes.append(SD_Class.NSD)
-
-        if sd_counter == nsd_counter:
-            if sum_sd_prob > sum_nsd_prob:
-                adjusted_confidence_score = 50 + (sum_sd_prob / 100) * 50
-            else:
-                adjusted_confidence_score = (sum_sd_prob / 100) * 50
-        adjusted_confidence_score = (sd_counter > nsd_counter) ? (50 + (sum_sd_prob / 100) * 50
-                                                                ): ((sum_sd_prob / 100) * 50
-                                                                    )
-        if adjusted_confidence_score >= 80:
-            print("Highly Sleep-deprived")
-        elif adjusted_confidence_score >= 50:
-            print("Moderate Sleep-deprived")
+            confidence_scores.append(sd_prob)
         else:
-            print("non-sleep-deprived")
+            nsd_counter += 1
+            sum_nsd_prob += nsd_prob
+            classes.append(SD_Class.NSD)
+            confidence_scores.append(nsd_prob)
 
-        print(f"Predicted class for feature {i + 1}: {y_pred}")
-        # print(f"Confidence score: {confidence}")
+    # Final calculations
+    avg_sd_prob = sum_sd_prob / sd_counter if sd_counter else 0.0
+    avg_nsd_prob = sum_nsd_prob / nsd_counter if nsd_counter else 0.0
+    avg_decision_score = np.mean(decision_scores) if decision_scores else 0.0
 
-        # avg_confidence_score += confidence
+    # Adjusted confidence scoring
+    if sd_counter == nsd_counter:
+        adjusted_confidence_score = 50 + (avg_sd_prob - avg_nsd_prob) * 50
+    elif sd_counter > nsd_counter:
+        adjusted_confidence_score = 50 + (avg_sd_prob * 50)
+    else:
+        adjusted_confidence_score = avg_nsd_prob * 50
 
-    # try:
-    #     avg_confidence_score = avg_confidence_score / len(features)
-    # except ZeroDivisionError:
-    #     if hasattr(svm, "decision_function"):
-    #         decision_scores = svm.decision_function(feature_pca)
-    #         probs = softmax(decision_scores)
-    #     elif hasattr(svm, "predict_proba"):
-    #         probs = svm.predict_proba(feature_pca)
-    #     else:
-    #         raise AttributeError(
-    #             "SVM model does not support decision_function or predict_proba."
-    #         )
-    #
-    #     # avg_confidence_score = np.max(probs)
+    # Feedback message
+    if adjusted_confidence_score >= 80:
+        print("Highly Sleep-deprived")
+    elif adjusted_confidence_score >= 50:
+        print("Moderate Sleep-deprived")
+    else:
+        print("Non-sleep-deprived")
 
-    avg_decision_score /= len(decision_scores)
-    print(f"Pre (non-sleep-deprived) features counts: {nsd_counter}")
-    print(f"Post (sleep-deprived) features counts: {sd_counter}")
-    print(f"average CFS: {avg_confidence_score}")
+    # Output summaries
+    print(f"\nAverage SD Probability: {avg_sd_prob:.4f}")
+    print(f"Average NSD Probability: {avg_nsd_prob:.4f}")
+    print(f"Pre (NSD) features count: {nsd_counter}")
+    print(f"Post (SD) features count: {sd_counter}")
+    print(f"Adjusted Confidence Score: {adjusted_confidence_score:.2f}")
     print(f"Average Decision Score (|margin|): {avg_decision_score:.4f}")
 
     is_success = True
-
-    return nsd_counter, sd_counter, classes, confidence_scores, avg_confidence_score, is_success
+    return (
+        nsd_counter,
+        sd_counter,
+        classes,
+        confidence_scores,
+        adjusted_confidence_score,
+        is_success,
+    )
 
 
 def classify(audio_path: Path) -> Classification:
@@ -270,8 +249,7 @@ def classify(audio_path: Path) -> Classification:
     svm = data["svm"]
     pca = data["pca"]
     # Define the output directory, if necessary to be stored
-    output_dir_processed = Path(
-        "preprocess/preprocessed_audio/processed_audio/")
+    output_dir_processed = Path("preprocess/preprocessed_audio/processed_audio/")
     output_dir_features = Path("feature_extraction/extracted_features/feature")
     output_dir_segmented = output_dir_processed / "segmented_audio"
 
@@ -310,30 +288,30 @@ def classify(audio_path: Path) -> Classification:
     # test_sample = np.mean(magnitude_strf, axis=0)
     # print(test_sample["strf"])
 
-    pre_count, post_count, classes, confidence_scores, avg_confidence_score, is_success = predict_features(
-        features, svm, pca
-    )
+    (
+        pre_count,
+        post_count,
+        classes,
+        confidence_scores,
+        adjusted_confidence_score,
+        is_success,
+    ) = predict_features(features, svm, pca)
 
     print(f"\nsuccess: {is_success}\n")
+    result_text = (
+        "You are sleep deprived."
+        if post_count > pre_count
+        else "You are not sleep deprived."
+    )
 
-    if post_count > pre_count:
-        return Classification(
-            sd=SD_Class.SD,
-            scores=confidence_scores,
-            classes=classes,
-            confidence_score=avg_confidence_score,
-            result="You are sleep deprived.",
-            is_success=is_success,
-        )
-    else:
-        return Classification(
-            sd=SD_Class.NSD,
-            scores=confidence_scores,
-            classes=classes,
-            confidence_score=avg_confidence_score,
-            result="You are not sleep deprived.",
-            is_success=is_success,
-        )
+    return Classification(
+        sd=SD_Class.SD if post_count > pre_count else SD_Class.NSD,
+        scores=confidence_scores,
+        classes=classes,
+        confidence_score=adjusted_confidence_score,
+        result=result_text,
+        is_success=is_success,
+    )
 
 
 def convertWAV(audio: Path) -> Path:
