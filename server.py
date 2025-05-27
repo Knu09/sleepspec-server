@@ -127,6 +127,7 @@ def predict_features(features, svm, pca):
     classes = []
     decision_scores = []
     confidence_scores = []
+    avg_confidence_score = 0.0
 
     for i, feature in enumerate(features):
         print(f"\nProcessing feature {i + 1}")
@@ -169,6 +170,10 @@ def predict_features(features, svm, pca):
             sd_prob = float(probs[sd_index])
             nsd_prob = float(probs[nsd_index])
 
+        # Output NSD and SD Probabilities
+        print(f"Non-sleep-deprived Probability Score: {nsd_prob}")
+        print(f"Sleep-deprived Probability Score: {sd_prob}")
+
         # Assign class and count
         if predicted_label == SD_Class.POST.value:
             sd_counter += 1
@@ -202,12 +207,16 @@ def predict_features(features, svm, pca):
     else:
         print("Non-sleep-deprived")
 
+    # Average Confidence Score
+    avg_confidence_score = sum(confidence_scores) / len(confidence_scores)
+
     # Output summaries
     print(f"\nAverage SD Probability: {avg_sd_prob:.4f}")
     print(f"Average NSD Probability: {avg_nsd_prob:.4f}")
     print(f"Pre (NSD) features count: {nsd_counter}")
     print(f"Post (SD) features count: {sd_counter}")
     print(f"Adjusted Confidence Score: {adjusted_confidence_score:.2f}")
+    print(f"Average Confidence Score: {avg_confidence_score:.2f}")
     print(f"Average Decision Score (|margin|): {avg_decision_score:.4f}")
 
     is_success = True
@@ -216,7 +225,7 @@ def predict_features(features, svm, pca):
         sd_counter,
         classes,
         confidence_scores,
-        adjusted_confidence_score,
+        avg_confidence_score,
         is_success,
     )
 
@@ -293,7 +302,7 @@ def classify(audio_path: Path) -> Classification:
         post_count,
         classes,
         confidence_scores,
-        adjusted_confidence_score,
+        avg_confidence_score,
         is_success,
     ) = predict_features(features, svm, pca)
 
@@ -308,7 +317,7 @@ def classify(audio_path: Path) -> Classification:
         sd=SD_Class.POST if post_count > pre_count else SD_Class.PRE,
         scores=confidence_scores,
         classes=classes,
-        confidence_score=adjusted_confidence_score,
+        confidence_score=avg_confidence_score,
         result=result_text,
         is_success=is_success,
     )
