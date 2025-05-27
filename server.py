@@ -33,8 +33,8 @@ def home():
 
 
 class SD_Class(Enum):
-    NSD = 0
-    SD = 1
+    PRE = "pre"  # Non-sleep deprived
+    POST = "post"  # Sleep deprived
 
 
 @dataclass
@@ -164,21 +164,21 @@ def predict_features(features, svm, pca):
         sd_prob, nsd_prob = 0.0, 0.0
         if hasattr(svm, "predict_proba"):
             probs = svm.predict_proba(feature_pca)[0]
-            sd_index = np.where(svm.classes_ == SD_Class.SD.value)[0][0]
-            nsd_index = np.where(svm.classes_ == SD_Class.NSD.value)[0][0]
+            sd_index = np.where(svm.classes_ == SD_Class.POST.value)[0][0]
+            nsd_index = np.where(svm.classes_ == SD_Class.PRE.value)[0][0]
             sd_prob = float(probs[sd_index])
             nsd_prob = float(probs[nsd_index])
 
         # Assign class and count
-        if predicted_label == SD_Class.SD.value:
+        if predicted_label == SD_Class.POST.value:
             sd_counter += 1
             sum_sd_prob += sd_prob
-            classes.append(SD_Class.SD)
+            classes.append(SD_Class.POST)
             confidence_scores.append(sd_prob)
         else:
             nsd_counter += 1
             sum_nsd_prob += nsd_prob
-            classes.append(SD_Class.NSD)
+            classes.append(SD_Class.PRE)
             confidence_scores.append(nsd_prob)
 
     # Final calculations
@@ -232,7 +232,7 @@ def classify(audio_path: Path) -> Classification:
     """
     svm_path = Path(
         # "$HOME/Research/Sleep Deprivation Detection using voice/output/pop_level/svm_fold_4.pkl"
-        "./svm_with_pca_fold_4.pkl"
+        "./updated_model/svm_pca_Strf.pkl"
     )
 
     test_sample_path = Path(
@@ -305,7 +305,7 @@ def classify(audio_path: Path) -> Classification:
     )
 
     return Classification(
-        sd=SD_Class.SD if post_count > pre_count else SD_Class.NSD,
+        sd=SD_Class.POST if post_count > pre_count else SD_Class.PRE,
         scores=confidence_scores,
         classes=classes,
         confidence_score=adjusted_confidence_score,
