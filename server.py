@@ -43,8 +43,11 @@ class Classification:
     classes: list[SD_Class]
     scores: list[float]
     confidence_score: float
+    avg_decision_score: float
     result: str
     is_success: bool
+    sd_prob: float
+    nsd_prob: float
     # other fields here
 
     def into_json(self):
@@ -68,7 +71,8 @@ def get_plot(filename):
 
 @app.route("/segments")
 def Segments():
-    segments_dir = Path("preprocess/preprocessed_audio/processed_audio/segmented_audio")
+    segments_dir = Path(
+        "preprocess/preprocessed_audio/processed_audio/segmented_audio")
 
     # Construct an in-memory zip file
     zip_buffer = io.BytesIO()
@@ -144,7 +148,9 @@ def predict_features(features, svm, pca):
         expected_features = pca.components_.shape[1]
         if feature_flat.shape[0] != expected_features:
             raise ValueError(
-                f"Feature mismatch! Expected {expected_features}, got {feature_flat.shape[0]}."
+                f"Feature mismatch! Expected {expected_features}, got {
+                    feature_flat.shape[0]
+                }."
             )
 
         # PCA transformation
@@ -221,11 +227,14 @@ def predict_features(features, svm, pca):
 
     is_success = True
     return (
+        avg_sd_prob,
+        avg_nsd_prob,
         nsd_counter,
         sd_counter,
         classes,
         confidence_scores,
         avg_confidence_score,
+        avg_decision_score,
         is_success,
     )
 
@@ -258,7 +267,8 @@ def classify(audio_path: Path) -> Classification:
     svm = data["svm"]
     pca = data["pca"]
     # Define the output directory, if necessary to be stored
-    output_dir_processed = Path("preprocess/preprocessed_audio/processed_audio/")
+    output_dir_processed = Path(
+        "preprocess/preprocessed_audio/processed_audio/")
     output_dir_features = Path("feature_extraction/extracted_features/feature")
     output_dir_segmented = output_dir_processed / "segmented_audio"
 
@@ -298,11 +308,14 @@ def classify(audio_path: Path) -> Classification:
     # print(test_sample["strf"])
 
     (
+        avg_sd_prob,
+        avg_nsd_prob,
         pre_count,
         post_count,
         classes,
         confidence_scores,
         avg_confidence_score,
+        avg_decision_score,
         is_success,
     ) = predict_features(features, svm, pca)
 
@@ -314,10 +327,13 @@ def classify(audio_path: Path) -> Classification:
     )
 
     return Classification(
+        sd_prob=avg_sd_prob,
+        nsd_prob=avg_nsd_prob,
         sd=SD_Class.POST if post_count > pre_count else SD_Class.PRE,
         scores=confidence_scores,
         classes=classes,
         confidence_score=avg_confidence_score,
+        avg_decision_score=avg_decision_score,
         result=result_text,
         is_success=is_success,
     )
