@@ -254,7 +254,7 @@ def classify(audio_path: Path) -> Classification:
     """
     svm_path = Path(
         # "$HOME/Research/Sleep Deprivation Detection using voice/output/pop_level/svm_fold_4.pkl"
-        "./updated_model/svm_pca_Strf.pkl"
+        "./updated_model/svm_pca_Strf_n_comp=24.pkl"
     )
 
     test_sample_path = Path(
