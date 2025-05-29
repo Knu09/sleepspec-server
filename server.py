@@ -71,8 +71,7 @@ def get_plot(filename):
 
 @app.route("/segments")
 def Segments():
-    segments_dir = Path(
-        "preprocess/preprocessed_audio/processed_audio/segmented_audio")
+    segments_dir = Path("preprocess/preprocessed_audio/processed_audio/segmented_audio")
 
     # Construct an in-memory zip file
     zip_buffer = io.BytesIO()
@@ -128,6 +127,8 @@ def predict_features(features, svm, pca):
     sd_counter = 0
     sum_nsd_prob = 0.0
     sum_sd_prob = 0.0
+    sd_prob_scores = []
+    nsd_prob_scores = []
     classes = []
     decision_scores = []
     confidence_scores = []
@@ -183,18 +184,21 @@ def predict_features(features, svm, pca):
         # Assign class and count
         if predicted_label == SD_Class.POST.value:
             sd_counter += 1
-            sum_sd_prob += sd_prob
             classes.append(SD_Class.POST)
             confidence_scores.append(sd_prob)
         else:
             nsd_counter += 1
-            sum_nsd_prob += nsd_prob
             classes.append(SD_Class.PRE)
             confidence_scores.append(nsd_prob)
 
+        sum_sd_prob += sd_prob
+        sum_nsd_prob += nsd_prob
+        sd_prob_scores.append(sd_prob)
+        nsd_prob_scores.append(nsd_prob)
+
     # Final calculations
-    avg_sd_prob = sum_sd_prob / sd_counter if sd_counter else 0.0
-    avg_nsd_prob = sum_nsd_prob / nsd_counter if nsd_counter else 0.0
+    avg_sd_prob = sum_sd_prob / len(sd_prob_scores)
+    avg_nsd_prob = sum_nsd_prob / len(nsd_prob_scores)
     avg_decision_score = np.mean(decision_scores) if decision_scores else 0.0
 
     # Adjusted confidence scoring
@@ -267,8 +271,7 @@ def classify(audio_path: Path) -> Classification:
     svm = data["svm"]
     pca = data["pca"]
     # Define the output directory, if necessary to be stored
-    output_dir_processed = Path(
-        "preprocess/preprocessed_audio/processed_audio/")
+    output_dir_processed = Path("preprocess/preprocessed_audio/processed_audio/")
     output_dir_features = Path("feature_extraction/extracted_features/feature")
     output_dir_segmented = output_dir_processed / "segmented_audio"
 
