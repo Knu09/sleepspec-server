@@ -56,7 +56,10 @@ class Classification:
                 "class": self.sd.value,
                 "classes": [c.value for c in self.classes],
                 "scores": self.scores,
+                "sd_prob": self.sd_prob,
+                "nsd_prob": self.nsd_prob,
                 "confidence_score": self.confidence_score,
+                "decision_score": self.avg_decision_score,
                 "result": self.result,
             }
         )
