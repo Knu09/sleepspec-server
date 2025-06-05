@@ -3,12 +3,13 @@ import numpy as np
 from feature_extraction import utils
 from feature_extraction import auditory
 from feature_extraction import plotslib
-import pickle
 import matplotlib
 
 from profiler import profile
+
 matplotlib.use("Agg")  # Use non-GUI backend
 import matplotlib.pyplot as plt
+from concurrent.futures import ProcessPoolExecutor, as_completed
 
 # Add output_dir for Flask app initialization
 output_dir = Path("feature_analysis/strf_plots")
@@ -46,57 +47,60 @@ class STRFAnalyzer:
         ]
         self.scales_vec = [0.71, 1.0, 1.41, 2.00, 2.83, 4.00, 5.66, 8.00]
 
+    def segment_strf(self, wav_file: Path, feature_tensors):
+        print(wav_file.name)
+        if wav_file.suffix == ".wav":
+            # Load the audio file
+            audio, fs = utils.audio_data(wav_file)
+
+            # Compute the STRF
+            strf, _, _, _ = auditory.strf(
+                audio,
+                audio_fs=fs,
+                duration=15,
+                rates=self.rates_vec,
+                scales=self.scales_vec,
+            )
+
+            # Compute the average STRF
+            magnitude_strf = np.abs(strf)
+
+            # Convert STRF to average vectors
+            avgvec = plotslib.strf2avgvec(magnitude_strf)
+            strf_scale_rate, strf_freq_rate, strf_freq_scale = plotslib.avgvec2strfavg(
+                avgvec,
+                nbScales=len(self.scales_vec),
+                nbRates=len(self.rates_vec),
+            )
+
+            # Accumulate the results
+            feature_tensors["total_scale_rate"] += strf_scale_rate
+            feature_tensors["total_freq_rate"] += strf_freq_rate
+            feature_tensors["total_freq_scale"] += strf_freq_scale
+
     @profile
     def compute_avg_strf(self, audio_dir: Path):
         # Initialize accumulators for scale-rate, freq-rate, and freq-scale
-        total_scale_rate = np.zeros((len(self.scales_vec), len(self.rates_vec)))
-        total_freq_rate = np.zeros((128, len(self.rates_vec)))
-        total_freq_scale = np.zeros((128, len(self.scales_vec)))
+        feature_tensors = {
+            "total_scale_rate": np.zeros((len(self.scales_vec), len(self.rates_vec))),
+            "total_freq_rate": np.zeros((128, len(self.rates_vec))),
+            "total_freq_scale": np.zeros((128, len(self.scales_vec))),
+        }
 
-        # Initialize a counter for the number of files
-        num_files = 0
+        # Batch process all audio files in the directory
+        with ProcessPoolExecutor() as executor:
+            futures = [
+                executor.submit(self.segment_strf, wav_file, feature_tensors)
+                for wav_file in audio_dir.iterdir()
+            ]
 
-        # Loop through all audio files in the directory
-        for wav_file in audio_dir.iterdir():
-            if wav_file.suffix == ".wav":
-                # Load the audio file
-                audio, fs = utils.audio_data(wav_file)
-
-                # Compute the STRF
-                strf, _, _, _ = auditory.strf(
-                    audio,
-                    audio_fs=fs,
-                    duration=15,
-                    rates=self.rates_vec,
-                    scales=self.scales_vec,
-                )
-
-                # Compute the average STRF
-                magnitude_strf = np.abs(strf)
-
-                # Convert STRF to average vectors
-                avgvec = plotslib.strf2avgvec(magnitude_strf)
-                strf_scale_rate, strf_freq_rate, strf_freq_scale = (
-                    plotslib.avgvec2strfavg(
-                        avgvec,
-                        nbScales=len(self.scales_vec),
-                        nbRates=len(self.rates_vec),
-                    )
-                )
-
-                # Accumulate the results
-                total_scale_rate += strf_scale_rate
-                total_freq_rate += strf_freq_rate
-                total_freq_scale += strf_freq_scale
-
-                # Increment the file counter
-                num_files += 1
+        num_files = sum(1 for _ in as_completed(futures))
 
         # Average the results
         return (
-            total_scale_rate / num_files,
-            total_freq_rate / num_files,
-            total_freq_scale / num_files,
+            feature_tensors["total_scale_rate"] / num_files,
+            feature_tensors["total_freq_rate"] / num_files,
+            feature_tensors["total_freq_scale"] / num_files,
         )
 
     def save_plots(self, scale_rate, freq_rate, freq_scale, output_dir: Path):

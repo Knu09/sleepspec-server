@@ -19,6 +19,7 @@ import pickle
 import sys
 from pathlib import Path
 
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from profiler import profile
 
 
@@ -70,7 +71,6 @@ scales_vec = [0.71, 1.0, 1.41, 2.00, 2.83, 4.00, 5.66, 8.00]
 # wav_file = "Predi-COVID_0221_20200715141551_1_m4a_W_0.wav"
 # audio, fs = utils.audio_data('soundTest.aiff')
 
-@profile
 def extract_features(audio_segment, fs):
     strf, auditory_spectrogram_, mod_scale, scale_rate = auditory.strf(
         audio_segment, audio_fs=fs, duration=15, rates=rates_vec, scales=scales_vec
@@ -113,27 +113,28 @@ def feature_extract_dir(input_dir: Path, output_dir: Path):
 
         print(f"Saved output to: {output_file}")
 
+
+def process_segment(i, segment, output_dir_str, sample_rate):
+    print(f"Processing Segment {i + 1}")
+
+    real_valued_strf, fs = extract_features(segment, sample_rate)
+
+    return real_valued_strf
+
+
+@profile
 def feature_extract_segments(segment_audio_arr, output_dir: Path, sample_rate):
     features = []
-    for i, segment in enumerate(segment_audio_arr):
-        print(f"Processing Segment {i + 1}")
 
-        real_valued_strf, fs = extract_features(segment, sample_rate)
-        features.append(real_valued_strf)
+    with ProcessPoolExecutor() as executor:
+        futures = [
+            executor.submit(process_segment, i, segment, str(output_dir), sample_rate)
+            for i, segment in enumerate(segment_audio_arr)
+        ]
 
-        # output_dir = Path(output_dir)
-        # Store in the directory
-        output_file = output_dir / f"extracted_feature_segment_{i + 1}_strf.pkl"
+        for future in as_completed(futures):
+            features.append(future.result())
 
-        strf_data = {
-            "strf": real_valued_strf,
-            "fs": fs,
-        }
-
-        # with open(output_file, "wb") as f:
-        #     pickle.dump(strf_data, f)
-
-        print(f"Saved output to: {output_file}")
     return features
 
 
