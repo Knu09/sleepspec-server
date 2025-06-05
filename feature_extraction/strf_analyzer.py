@@ -5,6 +5,8 @@ from feature_extraction import auditory
 from feature_extraction import plotslib
 import pickle
 import matplotlib
+
+from profiler import profile
 matplotlib.use("Agg")  # Use non-GUI backend
 import matplotlib.pyplot as plt
 
@@ -44,6 +46,7 @@ class STRFAnalyzer:
         ]
         self.scales_vec = [0.71, 1.0, 1.41, 2.00, 2.83, 4.00, 5.66, 8.00]
 
+    @profile
     def compute_avg_strf(self, audio_dir: Path):
         # Initialize accumulators for scale-rate, freq-rate, and freq-scale
         total_scale_rate = np.zeros((len(self.scales_vec), len(self.rates_vec)))

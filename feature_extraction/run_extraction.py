@@ -19,6 +19,8 @@ import pickle
 import sys
 from pathlib import Path
 
+from profiler import profile
+
 
 sys.path.append(str(Path(__file__).resolve().parent))
 
@@ -68,7 +70,7 @@ scales_vec = [0.71, 1.0, 1.41, 2.00, 2.83, 4.00, 5.66, 8.00]
 # wav_file = "Predi-COVID_0221_20200715141551_1_m4a_W_0.wav"
 # audio, fs = utils.audio_data('soundTest.aiff')
 
-
+@profile
 def extract_features(audio_segment, fs):
     strf, auditory_spectrogram_, mod_scale, scale_rate = auditory.strf(
         audio_segment, audio_fs=fs, duration=15, rates=rates_vec, scales=scales_vec
@@ -110,7 +112,6 @@ def feature_extract_dir(input_dir: Path, output_dir: Path):
             pickle.dump(strf_data, f)
 
         print(f"Saved output to: {output_file}")
-
 
 def feature_extract_segments(segment_audio_arr, output_dir: Path, sample_rate):
     features = []
