@@ -17,6 +17,8 @@ import numpy as np
 from scipy.special import softmax
 from sklearn.metrics import balanced_accuracy_score
 
+from profiler import profile
+
 sys.path.append("preprocess/")
 sys.path.append("feature_extraction/")
 
@@ -246,6 +248,7 @@ def predict_features(features, svm, pca):
     )
 
 
+@profile
 def classify(audio_path: Path) -> Classification:
     """
     Predict the class labels for the given STM features array of 3D using the trained SVM and PCA models.
