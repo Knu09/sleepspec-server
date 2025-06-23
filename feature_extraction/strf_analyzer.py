@@ -88,7 +88,7 @@ class STRFAnalyzer:
         }
 
         # Batch process all audio files in the directory
-        with ProcessPoolExecutor() as executor:
+        with ProcessPoolExecutor(max_workers=4) as executor:
             futures = [
                 executor.submit(self.segment_strf, wav_file, feature_tensors)
                 for wav_file in audio_dir.iterdir()
