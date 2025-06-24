@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Any
 import numpy as np
 from feature_extraction import utils
 from feature_extraction import auditory
@@ -47,36 +48,35 @@ class STRFAnalyzer:
         ]
         self.scales_vec = [0.71, 1.0, 1.41, 2.00, 2.83, 4.00, 5.66, 8.00]
 
-    def segment_strf(self, wav_file: Path, feature_tensors):
+    def segment_strf(self, wav_file: Path):
+        if wav_file.suffix != ".wav":
+            raise Exception("Not a wav file!")
+
         print(wav_file.name)
-        if wav_file.suffix == ".wav":
-            # Load the audio file
-            audio, fs = utils.audio_data(wav_file)
+        # Load the audio file
+        audio, fs = utils.audio_data(wav_file)
 
-            # Compute the STRF
-            strf, _, _, _ = auditory.strf(
-                audio,
-                audio_fs=fs,
-                duration=15,
-                rates=self.rates_vec,
-                scales=self.scales_vec,
-            )
+        # Compute the STRF
+        strf, _, _, _ = auditory.strf(
+            audio,
+            audio_fs=fs,
+            duration=15,
+            rates=self.rates_vec,
+            scales=self.scales_vec,
+        )
 
-            # Compute the average STRF
-            magnitude_strf = np.abs(strf)
+        # Compute the average STRF
+        magnitude_strf = np.abs(strf)
 
-            # Convert STRF to average vectors
-            avgvec = plotslib.strf2avgvec(magnitude_strf)
-            strf_scale_rate, strf_freq_rate, strf_freq_scale = plotslib.avgvec2strfavg(
-                avgvec,
-                nbScales=len(self.scales_vec),
-                nbRates=len(self.rates_vec),
-            )
+        # Convert STRF to average vectors
+        avgvec = plotslib.strf2avgvec(magnitude_strf)
+        strf_scale_rate, strf_freq_rate, strf_freq_scale = plotslib.avgvec2strfavg(
+            avgvec,
+            nbScales=len(self.scales_vec),
+            nbRates=len(self.rates_vec),
+        )
 
-            # Accumulate the results
-            feature_tensors["total_scale_rate"] += strf_scale_rate
-            feature_tensors["total_freq_rate"] += strf_freq_rate
-            feature_tensors["total_freq_scale"] += strf_freq_scale
+        return strf_scale_rate, strf_freq_rate, strf_freq_scale
 
     @profile
     def compute_avg_strf(self, audio_dir: Path):
@@ -90,11 +90,17 @@ class STRFAnalyzer:
         # Batch process all audio files in the directory
         with ProcessPoolExecutor(max_workers=4) as executor:
             futures = [
-                executor.submit(self.segment_strf, wav_file, feature_tensors)
+                executor.submit(self.segment_strf, wav_file)
                 for wav_file in audio_dir.iterdir()
             ]
 
-        num_files = sum(1 for _ in as_completed(futures))
+        for f in as_completed(futures):
+            sr, fr, fs = f.result()
+            feature_tensors["total_scale_rate"] += sr
+            feature_tensors["total_freq_rate"] += fr
+            feature_tensors["total_freq_scale"] += fs
+
+        num_files = len(futures)
 
         # Average the results
         return (
