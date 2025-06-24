@@ -126,7 +126,7 @@ def process_segment(i, segment, output_dir_str, sample_rate):
 def feature_extract_segments(segment_audio_arr, output_dir: Path, sample_rate):
     features = []
 
-    with ProcessPoolExecutor(max_workers=4) as executor:
+    with ProcessPoolExecutor(max_workers=6) as executor:
         futures = [
             executor.submit(process_segment, i, segment, str(output_dir), sample_rate)
             for i, segment in enumerate(segment_audio_arr)
