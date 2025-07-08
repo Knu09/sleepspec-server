@@ -216,11 +216,11 @@ def predict_features(features, svm, pca):
 
     # Feedback message
     if adjusted_confidence_score >= 80:
-        print("Highly Sleep-deprived")
+        print("\nClassification: Highly Sleep-deprived")
     elif adjusted_confidence_score >= 50:
-        print("Moderate Sleep-deprived")
+        print("\nClassification: Moderate Sleep-deprived")
     else:
-        print("Non-sleep-deprived")
+        print("\nClassification: Non-sleep-deprived")
 
     # Average Confidence Score
     avg_confidence_score = sum(confidence_scores) / len(confidence_scores)
