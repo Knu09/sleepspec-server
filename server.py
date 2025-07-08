@@ -37,6 +37,7 @@ def home():
 class SD_Class(Enum):
     PRE = "pre"  # Non-sleep deprived
     POST = "post"  # Sleep deprived
+    BALANCED = "balanced"
 
 
 @dataclass
@@ -335,15 +336,18 @@ def classify(audio_path: Path) -> Classification:
     print(f"\nsuccess: {is_success}\n")
     if adjusted_confidence_score == 50:
         result_text = "Your sleep pattern is balanced."
+        sd_class = SD_Class.BALANCED
     elif adjusted_confidence_score > 50:
         result_text = "You are sleep-deprived."
+        sd_class = SD_Class.POST
     else:
         result_text = "You are non-sleep-deprived."
+        sd_class = SD_Class.PRE
 
     return Classification(
         sd_prob=avg_sd_prob,
         nsd_prob=avg_nsd_prob,
-        sd=SD_Class.POST if post_count > pre_count else SD_Class.PRE,
+        sd=sd_class,
         scores=confidence_scores,
         classes=classes,
         confidence_score=avg_confidence_score,
