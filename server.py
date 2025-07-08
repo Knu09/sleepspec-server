@@ -76,7 +76,8 @@ def get_plot(filename):
 
 @app.route("/segments")
 def Segments():
-    segments_dir = Path("preprocess/preprocessed_audio/processed_audio/segmented_audio")
+    segments_dir = Path(
+        "preprocess/preprocessed_audio/processed_audio/segmented_audio")
 
     # Construct an in-memory zip file
     zip_buffer = io.BytesIO()
@@ -242,6 +243,7 @@ def predict_features(features, svm, pca):
         sd_counter,
         classes,
         confidence_scores,
+        adjusted_confidence_score,
         avg_confidence_score,
         avg_decision_score,
         is_success,
@@ -277,7 +279,8 @@ def classify(audio_path: Path) -> Classification:
     svm = data["svm"]
     pca = data["pca"]
     # Define the output directory, if necessary to be stored
-    output_dir_processed = Path("preprocess/preprocessed_audio/processed_audio/")
+    output_dir_processed = Path(
+        "preprocess/preprocessed_audio/processed_audio/")
     output_dir_features = Path("feature_extraction/extracted_features/feature")
     output_dir_segmented = output_dir_processed / "segmented_audio"
 
@@ -323,17 +326,19 @@ def classify(audio_path: Path) -> Classification:
         post_count,
         classes,
         confidence_scores,
+        adjusted_confidence_score,
         avg_confidence_score,
         avg_decision_score,
         is_success,
     ) = predict_features(features, svm, pca)
 
     print(f"\nsuccess: {is_success}\n")
-    result_text = (
-        "You are sleep deprived."
-        if post_count > pre_count
-        else "You are not sleep deprived."
-    )
+    if adjusted_confidence_score == 50:
+        result_text = "Your sleep pattern is balanced."
+    elif adjusted_confidence_score > 50:
+        result_text = "You are sleep-deprived."
+    else:
+        result_text = "You are non-sleep-deprived."
 
     return Classification(
         sd_prob=avg_sd_prob,
