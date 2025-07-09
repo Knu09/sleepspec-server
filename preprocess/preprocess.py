@@ -127,7 +127,7 @@ def preprocess_audio(
             segments.append(segment)
             # Save segment to disk if output_dir is provided
             if output_dir:
-                file = segmented_dir / f"segment_{i}.wav"
+                file = segmented_dir / f"segment_{i + 1}.wav"
                 sf.write(
                     file,
                     segment,
