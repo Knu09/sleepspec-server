@@ -120,7 +120,7 @@ def preprocess_audio(
     # Split and save segments
     segments = []
 
-    for i, start in enumerate(reversed(range(0, len(y), segment_samples))):
+    for i, start in enumerate(range(0, len(y), segment_samples)):
         end = start + segment_samples
         segment = y[start:end]
         if len(segment) == segment_samples:  # includes full-length segments only
