@@ -135,34 +135,3 @@ def preprocess_audio(
                 )
 
     return segments, sr
-
-
-    # # Split and save segments
-    # for i, start in enumerate(range(1, total_samples, segment_samples)):
-    #     end = start + segment_samples
-    #     segment = y_normalized[start:end]
-    #
-    #     # Save only full-length segments
-    #     if len(segment) == segment_samples:
-    #         output_file = os.path.join(output_dir, f"segment_{i + 2}.wav")
-    #         sf.write(output_file, segment, sr)
-    #         print(f"Saved: {output_file}")
-
-
-# input_audio = "Predi-COVID_0099_20200624100830_1_m4a_W_0.wav"
-# input_audio = os.path.expanduser("~/Downloads/moby_mono.wav")
-# input_audio = "../data/209.mp3"
-# check_audio_extension(input_audio)
-# preprocess_audio(source_dir, output_base_dir)
-
-# source_dir = "/home/christian/Desktop/C_006/THESIS/Datasets/Predi_COVID19_Fatigue_Voice_Recording/fatigue/TypeW/Type1/"
-# output_base_dir = "preprocessed_audio/preprocess_audio/"
-# input_audio = "../data/Eriks_Voice.m4a"
-
-# segments, sr = preprocess_audio(input_audio, output_base_dir)
-
-# Segmented Audio
-# for file in os.listdir(source_dir):
-#     if file.endswith(".wav") or file.endswith(".m5a") or file.endswith(".3gp"):
-#        input_path = os.path.join(source_dir, file)
-#         preprocess_audio(input_path, output_base_dir)
