@@ -19,7 +19,7 @@ import pickle
 import sys
 from pathlib import Path
 
-from concurrent.futures import ProcessPoolExecutor, as_completed
+from concurrent.futures import ProcessPoolExecutor
 from profiler import profile
 
 
@@ -125,16 +125,16 @@ def process_segment(i, segment, output_dir_str, sample_rate):
 
 @profile
 def feature_extract_segments(segment_audio_arr, output_dir: Path, sample_rate):
-    features = []
 
     with ProcessPoolExecutor(max_workers=6) as executor:
+        # Submit in order and keep the futures in the same order
         futures = [
             executor.submit(process_segment, i, segment, str(output_dir), sample_rate)
             for i, segment in enumerate(segment_audio_arr)
         ]
 
-        for future in as_completed(futures):
-            features.append(future.result())
+        # Retrieve results in the same order as submitted
+        features = [future.result() for future in futures]
 
     return features
 
