@@ -45,6 +45,7 @@ class Classification:
     sd: SD_Class
     classes: list[SD_Class]
     scores: list[float]
+    decision_scores: list[float]
     confidence_score: float
     avg_decision_score: float
     result: str
@@ -59,6 +60,7 @@ class Classification:
                 "class": self.sd.value,
                 "classes": [c.value for c in self.classes],
                 "scores": self.scores,
+                "decision_scores": self.decision_scores,
                 "sd_prob": self.sd_prob,
                 "nsd_prob": self.nsd_prob,
                 "confidence_score": self.confidence_score,
@@ -244,6 +246,7 @@ def predict_features(features, svm, pca):
         sd_counter,
         classes,
         confidence_scores,
+        decision_scores,
         adjusted_confidence_score,
         avg_confidence_score,
         avg_decision_score,
@@ -327,6 +330,7 @@ def classify(audio_path: Path) -> Classification:
         post_count,
         classes,
         confidence_scores,
+        decision_scores,
         adjusted_confidence_score,
         avg_confidence_score,
         avg_decision_score,
@@ -349,6 +353,7 @@ def classify(audio_path: Path) -> Classification:
         nsd_prob=avg_nsd_prob,
         sd=sd_class,
         scores=confidence_scores,
+        decision_scores=decision_scores,
         classes=classes,
         confidence_score=avg_confidence_score,
         avg_decision_score=avg_decision_score,
