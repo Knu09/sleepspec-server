@@ -37,6 +37,7 @@ def home():
 class SD_Class(Enum):
     PRE = "pre"  # Non-sleep deprived
     POST = "post"  # Sleep deprived
+    BALANCED = "balanced"
 
 
 @dataclass
@@ -44,6 +45,7 @@ class Classification:
     sd: SD_Class
     classes: list[SD_Class]
     scores: list[float]
+    decision_scores: list[float]
     confidence_score: float
     avg_decision_score: float
     result: str
@@ -58,6 +60,7 @@ class Classification:
                 "class": self.sd.value,
                 "classes": [c.value for c in self.classes],
                 "scores": self.scores,
+                "decision_scores": self.decision_scores,
                 "sd_prob": self.sd_prob,
                 "nsd_prob": self.nsd_prob,
                 "confidence_score": self.confidence_score,
@@ -76,7 +79,8 @@ def get_plot(filename):
 
 @app.route("/segments")
 def Segments():
-    segments_dir = Path("preprocess/preprocessed_audio/processed_audio/segmented_audio")
+    segments_dir = Path(
+        "preprocess/preprocessed_audio/processed_audio/segmented_audio")
 
     # Construct an in-memory zip file
     zip_buffer = io.BytesIO()
@@ -216,11 +220,11 @@ def predict_features(features, svm, pca):
 
     # Feedback message
     if adjusted_confidence_score >= 80:
-        print("Highly Sleep-deprived")
+        print("\nClassification: Highly Sleep-deprived")
     elif adjusted_confidence_score >= 50:
-        print("Moderate Sleep-deprived")
+        print("\nClassification: Moderate Sleep-deprived")
     else:
-        print("Non-sleep-deprived")
+        print("\nClassification: Non-sleep-deprived")
 
     # Average Confidence Score
     avg_confidence_score = sum(confidence_scores) / len(confidence_scores)
@@ -242,6 +246,8 @@ def predict_features(features, svm, pca):
         sd_counter,
         classes,
         confidence_scores,
+        decision_scores,
+        adjusted_confidence_score,
         avg_confidence_score,
         avg_decision_score,
         is_success,
@@ -277,7 +283,8 @@ def classify(audio_path: Path) -> Classification:
     svm = data["svm"]
     pca = data["pca"]
     # Define the output directory, if necessary to be stored
-    output_dir_processed = Path("preprocess/preprocessed_audio/processed_audio/")
+    output_dir_processed = Path(
+        "preprocess/preprocessed_audio/processed_audio/")
     output_dir_features = Path("feature_extraction/extracted_features/feature")
     output_dir_segmented = output_dir_processed / "segmented_audio"
 
@@ -323,23 +330,30 @@ def classify(audio_path: Path) -> Classification:
         post_count,
         classes,
         confidence_scores,
+        decision_scores,
+        adjusted_confidence_score,
         avg_confidence_score,
         avg_decision_score,
         is_success,
     ) = predict_features(features, svm, pca)
 
     print(f"\nsuccess: {is_success}\n")
-    result_text = (
-        "You are sleep deprived."
-        if post_count > pre_count
-        else "You are not sleep deprived."
-    )
+    if adjusted_confidence_score == 50:
+        result_text = "Your sleep pattern is balanced."
+        sd_class = SD_Class.BALANCED
+    elif adjusted_confidence_score > 50:
+        result_text = "You are sleep-deprived."
+        sd_class = SD_Class.POST
+    else:
+        result_text = "You are non-sleep-deprived."
+        sd_class = SD_Class.PRE
 
     return Classification(
         sd_prob=avg_sd_prob,
         nsd_prob=avg_nsd_prob,
-        sd=SD_Class.POST if post_count > pre_count else SD_Class.PRE,
+        sd=sd_class,
         scores=confidence_scores,
+        decision_scores=decision_scores,
         classes=classes,
         confidence_score=avg_confidence_score,
         avg_decision_score=avg_decision_score,
