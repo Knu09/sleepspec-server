@@ -307,7 +307,7 @@ def classify(audio_path: Path, uid) -> Classification:
     print(f"Sampling rate: {sr} Hz")
 
     # Feature Extraction
-    features = feature_extract_segments(segments, output_dir_features, sr)
+    features = feature_extract_segments(segments, sr)
     print("Feature Extraction Complete.")
 
     # test_sample = pickle.load(test_sample_path)
