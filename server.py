@@ -70,17 +70,16 @@ class Classification:
         )
 
 
-@app.route("/plots/<path:filename>")
-def get_plot(filename):
+@app.route("/plots/<path:filename>/<uuid:uid>")
+def get_plot(filename, uid):
     print(f"Requesting plot: {filename}")
-    path = Path("feature_analysis/strf_plots/").resolve(strict=True)
+    path = (Path("feature_analysis/strf_plots") / str(uid)).resolve(strict=True)
     return send_from_directory(path, filename)
 
 
-@app.route("/segments")
-def Segments():
-    segments_dir = Path(
-        "preprocess/preprocessed_audio/processed_audio/segmented_audio")
+@app.route("/segments/<uuid:uid>")
+def Segments(uid):
+    segments_dir = Path("preprocess/preprocessed_audio/processed_audio") / str(uid) / "segmented_audio"
 
     # Construct an in-memory zip file
     zip_buffer = io.BytesIO()
@@ -99,20 +98,21 @@ def Segments():
     )
 
 
-@app.route("/upload", methods=["POST"])
-def Upload():
+@app.route("/upload/<uuid:uid>", methods=["POST"])
+def Upload(uid):
     if "audio" not in request.files:
         return jsonify({"error": "No audio file in request."}), HTTPStatus.BAD_REQUEST
 
     audio_file = request.files["audio"]
+
     if audio_file.filename:
         uploads_path.mkdir(parents=True, exist_ok=True)
 
-        file_path = uploads_path / secure_filename(audio_file.filename)
+        file_path = uploads_path / str(uid) / secure_filename(audio_file.filename)
         audio_file.save(file_path)
 
         wav_file = convertWAV(file_path)
-        clf = classify(wav_file)
+        clf = classify(wav_file, uid)
 
         return (
             clf.into_json(),
@@ -255,7 +255,7 @@ def predict_features(features, svm, pca):
 
 
 @profile
-def classify(audio_path: Path) -> Classification:
+def classify(audio_path: Path, uid) -> Classification:
     """
     Predict the class labels for the given STM features array of 3D using the trained SVM and PCA models.
 
@@ -284,7 +284,7 @@ def classify(audio_path: Path) -> Classification:
     pca = data["pca"]
     # Define the output directory, if necessary to be stored
     output_dir_processed = Path(
-        "preprocess/preprocessed_audio/processed_audio/")
+        "preprocess/preprocessed_audio/processed_audio") / str(uid)
     output_dir_features = Path("feature_extraction/extracted_features/feature")
     output_dir_segmented = output_dir_processed / "segmented_audio"
 
@@ -299,7 +299,7 @@ def classify(audio_path: Path) -> Classification:
         avg_scale_rate,
         avg_freq_rate,
         avg_freq_scale,
-        Path("feature_analysis/strf_plots"),
+        Path("feature_analysis/strf_plots") / str(uid),
     )
 
     # Print details
