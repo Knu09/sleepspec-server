@@ -70,7 +70,7 @@ class Classification:
         )
 
 
-@app.route("/plots/<path:filename>/<uuid:uid>")
+@app.route("/plots/<uuid:uid>/<path:filename>")
 def get_plot(filename, uid):
     print(f"Requesting plot: {filename}")
     path = (Path("feature_analysis/strf_plots") / str(uid)).resolve(strict=True)
@@ -106,7 +106,7 @@ def Upload(uid):
     audio_file = request.files["audio"]
 
     if audio_file.filename:
-        uploads_path.mkdir(parents=True, exist_ok=True)
+        (uploads_path / str(uid)).mkdir(parents=True, exist_ok=True)
 
         file_path = uploads_path / str(uid) / secure_filename(audio_file.filename)
         audio_file.save(file_path)
