@@ -115,7 +115,7 @@ def feature_extract_dir(input_dir: Path, output_dir: Path):
         print(f"Saved output to: {output_file}")
 
 
-def process_segment(i, segment, output_dir_str, sample_rate):
+def process_segment(i, segment, sample_rate):
     print(f"Processing Segment {i + 1}")
 
     real_valued_strf, fs = extract_features(segment, sample_rate)
@@ -124,12 +124,12 @@ def process_segment(i, segment, output_dir_str, sample_rate):
 
 
 @profile
-def feature_extract_segments(segment_audio_arr, output_dir: Path, sample_rate):
+def feature_extract_segments(segment_audio_arr, sample_rate):
 
     with ProcessPoolExecutor(max_workers=6) as executor:
         # Submit in order and keep the futures in the same order
         futures = [
-            executor.submit(process_segment, i, segment, str(output_dir), sample_rate)
+            executor.submit(process_segment, i, segment, sample_rate)
             for i, segment in enumerate(segment_audio_arr)
         ]
 
