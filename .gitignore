@@ -14,7 +14,6 @@ preprocess/preprocessed_audio/
 preprocess/processed_audio_3/
 preprocess/processed_audio/
 preprocess/preprocessed_audio_erik/
-feature_analysis/strf_plots/
 
 # file extensions
 *.wav

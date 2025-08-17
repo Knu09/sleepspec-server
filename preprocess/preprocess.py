@@ -81,7 +81,7 @@ def preprocess_audio(
     input_file = check_audio_extension(input_file)
 
     # Output of subdirectory
-    segmented_dir = Path(output_dir) / "segmented_audio"
+    segmented_dir = output_dir / "segmented_audio"
     if segmented_dir.exists():
         shutil.rmtree(segmented_dir)
     segmented_dir.mkdir(parents=True, exist_ok=True)
