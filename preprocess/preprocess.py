@@ -1,11 +1,14 @@
-from pathlib import Path
 import librosa
+from pathlib import Path
 import soundfile as sf
 import numpy as np
 import noisereduce as nr
 from pydub import AudioSegment
 from pydub.silence import split_on_silence
 import shutil
+import matplotlib.pyplot as plt
+import scipy.fftpack as fft
+from scipy.signal import medfilt
 
 
 def check_audio_extension(input_file: Path):
@@ -39,30 +42,43 @@ def get_unique_output_dir(base_dir: Path) -> Path:
     return output_dir
 
 
-def remove_silence(input_file, silence_thresh=-40, min_silence_len=500) -> AudioSegment:
+def background_noise_removal(input_file):
     """
-    Removes silent segments form the audio file.
+    Remove background noise segments from the audio file.
+    Uses Fourier Transform.
     """
-    audio = AudioSegment.from_file(input_file)
-    chunks = split_on_silence(
-        audio,
-        min_silence_len=min_silence_len,
-        silence_thresh=silence_thresh,
-        keep_silence=100,  # Keep 100 ms of silence at the start/end of each chunk
-    )
 
-    return sum(chunks, AudioSegment.silent(duration=0))
+    y, sr = librosa.load(input_file, sr=None)
+
+    # Compute STFT
+    S_full, phase = librosa.magphase(librosa.stft(y))
+
+    # Estimate noise profile as the median across time
+    noise_power = np.mean(S_full[:, int(sr * 0.1)], axis=1)
+
+    # Build mask
+    mask = S_full > noise_power[:, None]
+    mask = mask.astype(float)
+    mask = medfilt(mask, kernel_size=(1, 5))
+    S_clean = S_full * mask
+    y_clean = librosa.istft(S_clean * phase)
+
+    return y_clean
 
 
 # Define preprocessing function
 def preprocess_audio(
-    input_file, output_dir=Path(""), segment_length=15, target_sr=16000
+    input_file,
+    output_dir=Path(""),
+    noise_removal_flag=False,
+    segment_length=15,
+    target_sr=16000,
 ):
     """
     Preprocesses an audio file by performing noise reduction, segmentation (15s), amplitude normalization, silence removal, and downsampling (44.1kHz to 16kHz).
 
     - Converts non-WAV files to WAV
-    - Performs noise reduction
+    - Performs background noise removal
     - Downsamples (44.1kHz → 16kHz)
     - Segments audio into 15s chunks
     - Handles both single files and directories
@@ -89,10 +105,15 @@ def preprocess_audio(
     # Load and resample audio
     y, sr = load_audio_with_soundfile(input_file)
 
-    # Apply noise reduction using spectral gating
-    # y_denoised = nr.reduce_noise(y=y, sr=sr)
+    # Apply background noise removal
+    # y = background_noise_removal(input_file)
 
-    ## Noise reduction in chunks (if audio is long)
+    # Check if noise removal is active in client-side
+    if noise_removal_flag:
+        # Apply noise reduction using spectral gating
+        y = nr.reduce_noise(y=y, sr=sr)
+
+    # Noise reduction in chunks (if audio is long)
     # chunk_size = sr * 5  # Process 5-second chunks
     # y_denoised = np.concatenate(
     #     [
@@ -101,7 +122,7 @@ def preprocess_audio(
     #     ]
     # )
 
-    ## Normalize amplitudes to [-1, 1]
+    # Normalize amplitudes to [-1, 1]
     # y_normalized = y_denoised / np.max(np.abs(y_denoised))
 
     # Resample from 44.1kHz to 16kHz if not in target sampling rate
