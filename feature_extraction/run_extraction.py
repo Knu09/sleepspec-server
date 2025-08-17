@@ -128,6 +128,8 @@ def feature_extract_segments(segment_audio_arr, output_dir: Path, sample_rate):
 
     with ProcessPoolExecutor(max_workers=6) as executor:
         # Submit in order and keep the futures in the same order
+
+        # NOTE: futures or features?
         futures = [
             executor.submit(process_segment, i, segment, str(output_dir), sample_rate)
             for i, segment in enumerate(segment_audio_arr)
