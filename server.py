@@ -73,13 +73,15 @@ class Classification:
 @app.route("/plots/<uuid:uid>/<path:filename>")
 def get_plot(filename, uid):
     print(f"Requesting plot: {filename}")
-    path = (Path("feature_analysis/strf_plots") / str(uid)).resolve(strict=True)
+    path = (Path("feature_analysis/strf_plots") /
+            str(uid)).resolve(strict=True)
     return send_from_directory(path, filename)
 
 
 @app.route("/segments/<uuid:uid>")
 def Segments(uid):
-    segments_dir = Path("preprocess/preprocessed_audio/processed_audio") / str(uid) / "segmented_audio"
+    segments_dir = Path(
+        "preprocess/preprocessed_audio/processed_audio") / str(uid) / "segmented_audio"
 
     # Construct an in-memory zip file
     zip_buffer = io.BytesIO()
@@ -105,14 +107,19 @@ def Upload(uid):
 
     audio_file = request.files["audio"]
 
+    # parse noiseRemoval request
+    noise_removal_flag = request.form.get(
+        "noiseRemoval", "false").lower() == "true"
+
     if audio_file.filename:
         (uploads_path / str(uid)).mkdir(parents=True, exist_ok=True)
 
-        file_path = uploads_path / str(uid) / secure_filename(audio_file.filename)
+        file_path = uploads_path / \
+            str(uid) / secure_filename(audio_file.filename)
         audio_file.save(file_path)
 
         wav_file = convertWAV(file_path)
-        clf = classify(wav_file, uid)
+        clf = classify(wav_file, uid, noise_removal_flag)
 
         return (
             clf.into_json(),
@@ -255,7 +262,7 @@ def predict_features(features, svm, pca):
 
 
 @profile
-def classify(audio_path: Path, uid) -> Classification:
+def classify(audio_path: Path, uid, noise_removal_flag) -> Classification:
     """
     Predict the class labels for the given STM features array of 3D using the trained SVM and PCA models.
 
@@ -289,7 +296,8 @@ def classify(audio_path: Path, uid) -> Classification:
     output_dir_segmented = output_dir_processed / "segmented_audio"
 
     # Preprocess
-    segments, sr = preprocess_audio(audio_path, output_dir_processed)
+    segments, sr = preprocess_audio(
+        audio_path, output_dir_processed, noise_removal_flag)
 
     # Compute and save STRFs
     avg_scale_rate, avg_freq_rate, avg_freq_scale = strf_analyzer.compute_avg_strf(
