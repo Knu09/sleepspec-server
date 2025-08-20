@@ -68,6 +68,8 @@ class STRFAnalyzer:
         # Compute the average STRF
         magnitude_strf = np.abs(strf)
 
+        # TODO: Get the features after the run_extraction. To reduce the computation of the STRF
+
         # Convert STRF to average vectors
         avgvec = plotslib.strf2avgvec(magnitude_strf)
         strf_scale_rate, strf_freq_rate, strf_freq_scale = plotslib.avgvec2strfavg(
