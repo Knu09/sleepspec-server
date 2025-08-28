@@ -272,15 +272,10 @@ def classify(audio_path: Path, uid, noise_removal_flag) -> Classification:
         pca_path (str): Path to the trained PCA model (.pkl file).
     """
     svm_path = Path(
-        # "$HOME/Research/Sleep Deprivation Detection using voice/output/pop_level/svm_fold_4.pkl"
-        "./updated_model/svm_pca_Strf_n_comp=24.pkl"
+        "./updated_model/svm_pca_strf_ncomp24_2025-05-29.pkl"
     )
 
     test_sample_path = Path(
-        # "~/Research/Sleep Deprivation Detection using voice/strf_data_new.pkl"
-        # "~/Research/Sleep Deprivation Detection using voice/dataset/osf/stmtf/strf_session_post_subjectNb_01_daySession_01_segmentNb_0.pkl"
-        # "~/github/16Khz-models/feature_extraction/gian_data_new.pkl"
-        # "~/github/16Khz-models/feature_extraction/pkls/segment_72_strf.pkl"
         "./strf_data_new.pkl"
     )
 
