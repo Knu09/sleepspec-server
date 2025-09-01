@@ -46,6 +46,8 @@ class Classification:
     classes: list[SD_Class]
     scores: list[float]
     decision_scores: list[float]
+    sd_decision_score: float
+    nsd_decision_score: float
     confidence_score: float
     avg_decision_score: float
     result: str
@@ -61,6 +63,8 @@ class Classification:
                 "classes": [c.value for c in self.classes],
                 "scores": self.scores,
                 "decision_scores": self.decision_scores,
+                "sd_decision_score": self.sd_decision_score,
+                "nsd_decision_score": self.nsd_decision_score,
                 "sd_prob": self.sd_prob,
                 "nsd_prob": self.nsd_prob,
                 "confidence_score": self.confidence_score,
@@ -146,6 +150,8 @@ def predict_features(features, svm, pca):
     sd_prob_scores = []
     nsd_prob_scores = []
     classes = []
+    sd_decision_scores = []
+    nsd_decision_scores = []
     decision_scores = []
     confidence_scores = []
     avg_confidence_score = 0.0
@@ -202,10 +208,12 @@ def predict_features(features, svm, pca):
             sd_counter += 1
             classes.append(SD_Class.POST)
             confidence_scores.append(sd_prob)
+            sd_decision_scores.append(decision_score)
         else:
             nsd_counter += 1
             classes.append(SD_Class.PRE)
             confidence_scores.append(nsd_prob)
+            nsd_decision_scores.append(decision_score)
 
         sum_sd_prob += sd_prob
         sum_nsd_prob += nsd_prob
@@ -216,6 +224,10 @@ def predict_features(features, svm, pca):
     avg_sd_prob = sum_sd_prob / len(sd_prob_scores)
     avg_nsd_prob = sum_nsd_prob / len(nsd_prob_scores)
     avg_decision_score = np.mean(decision_scores) if decision_scores else 0.0
+    avg_sd_decision_score = np.mean(
+        sd_decision_scores) if sd_decision_scores else 0.0
+    avg_nsd_decision_score = np.mean(
+        nsd_decision_scores) if nsd_decision_scores else 0.0
 
     # Adjusted confidence scoring
     if sd_counter == nsd_counter:
@@ -243,7 +255,9 @@ def predict_features(features, svm, pca):
     print(f"Post (SD) features count: {sd_counter}")
     print(f"Adjusted Confidence Score: {adjusted_confidence_score:.2f}")
     print(f"Average Confidence Score: {avg_confidence_score:.2f}")
-    print(f"Average Decision Score (|margin|): {avg_decision_score:.4f}")
+    print(f"Average Decision Score (all): {avg_decision_score:.4f}")
+    print(f"Average Decision Score (sd only): {avg_sd_decision_score:.4f}")
+    print(f"Average Decision Score (nsd only): {avg_nsd_decision_score:.4f}")
 
     is_success = True
     return (
@@ -254,6 +268,8 @@ def predict_features(features, svm, pca):
         classes,
         confidence_scores,
         decision_scores,
+        avg_sd_decision_score,
+        avg_nsd_decision_score,
         adjusted_confidence_score,
         avg_confidence_score,
         avg_decision_score,
@@ -274,6 +290,8 @@ def classify(audio_path: Path, uid, noise_removal_flag) -> Classification:
     svm_path = Path(
         "./updated_model/svm_pca_strf_ncomp24_2025-05-29.pkl"
     )
+
+    print(f"Model: {svm_path}")
 
     test_sample_path = Path(
         "./strf_data_new.pkl"
@@ -334,6 +352,8 @@ def classify(audio_path: Path, uid, noise_removal_flag) -> Classification:
         classes,
         confidence_scores,
         decision_scores,
+        avg_sd_decision_score,
+        avg_nsd_decision_score,
         adjusted_confidence_score,
         avg_confidence_score,
         avg_decision_score,
@@ -357,6 +377,8 @@ def classify(audio_path: Path, uid, noise_removal_flag) -> Classification:
         sd=sd_class,
         scores=confidence_scores,
         decision_scores=decision_scores,
+        sd_decision_score=avg_sd_decision_score,
+        nsd_decision_score=avg_nsd_decision_score,
         classes=classes,
         confidence_score=avg_confidence_score,
         avg_decision_score=avg_decision_score,
