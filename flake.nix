@@ -12,6 +12,31 @@
     system = "x86_64-linux";
     pkgs = nixpkgs.legacyPackages.${system};
 
+    # Define pedalboard package
+    pedalboard = pkgs.python312Packages.buildPythonPackage {
+      pname = "pedalboard";
+      version = "0.9.17"; # Specify the desired version
+
+      src = pkgs.fetchurl {
+        url = "https://files.pythonhosted.org/packages/bf/43/4079fbea1b68b70511bbf53c4bc7d654dfa9e7c28a1b1ddaefd0214bf477/pedalboard-0.9.17-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl";
+        sha256 = "6a7c6ee49c8c9eabe0c787450f440fb8d3857949cff03299805134ac519887ea";
+      };
+
+      format = "wheel";
+
+      meta = with pkgs.lib; {
+        description = "A Python library for adding effects to audio.";
+        homepage = "https://github.com/spotify/pedalboard";
+        license = licenses.gpl3;
+      };
+
+      nativeBuildInputs = [pkgs.autoPatchelfHook];
+      propagatedBuildInputs = with pkgs; [
+        bzip2
+        zlib
+      ];
+    };
+
     # Define noisereduce package
     noisereduce = pkgs.python312Packages.buildPythonPackage rec {
       pname = "noisereduce";
@@ -58,6 +83,7 @@
         matplotlib
         noisereduce
         numpy
+        pedalboard
         pydub
         scikit-learn
         scipy
