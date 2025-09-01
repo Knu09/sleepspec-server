@@ -122,6 +122,8 @@ def preprocess_audio(
         int: The sampling rate of the processed segments.
     """
 
+    print(f"Processing audio file: {input_file}")
+
     input_file = check_audio_extension(input_file)
 
     # Output of subdirectory
@@ -158,6 +160,8 @@ def preprocess_audio(
         # Apply noise reduction using spectral gating
         y = noise_reduction(y, sr, stationary=True, prop_decrease=0.75)
 
+    print(f"Background noise reduction: {
+          'active' if noise_removal_flag else 'inactive'}")
     # total_samples = len(y_denoised)
 
     # Get the base filename of the audio (excluding extension)

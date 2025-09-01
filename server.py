@@ -275,6 +275,8 @@ def classify(audio_path: Path, uid, noise_removal_flag) -> Classification:
         "./updated_model/svm_pca_strf_ncomp24_2025-05-29.pkl"
     )
 
+    print(f"Model: {svm_path}")
+
     test_sample_path = Path(
         "./strf_data_new.pkl"
     )
