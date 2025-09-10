@@ -388,9 +388,12 @@ def classify(audio_path: Path, uid, noise_removal_flag) -> Classification:
 
 
 def convertWAV(audio: Path) -> Path:
+    if audio.suffix == ".wav":
+        return audio
+
     wav = audio.with_suffix(".wav")
     file = AudioSegment.from_file(audio)
     file.export(wav, format="wav")
 
     audio.unlink()
-    return Path(wav)
+    return wav
