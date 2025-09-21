@@ -3,6 +3,10 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+*.zip
+updated_model/svm_pca_Strf_n_comp=24.pkl
+*.txt
+
 # C extensions
 *.so
     
