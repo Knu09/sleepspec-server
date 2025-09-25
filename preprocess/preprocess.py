@@ -169,8 +169,9 @@ def preprocess_audio(
                     print(f"Using first {noise_end_time}s for noise profile.")
                     # Instantiate the filter
                     wiener_filter = Wiener(
-                        WAV_FILE=str(temp_noisy_path.with_suffix('')),
-                        *(noise_start_time, noise_end_time)
+                        str(temp_noisy_path.with_suffix('')),
+                        noise_start_time,
+                        noise_end_time
                     )
 
                     # Apply the two-step Wiener filter. This saves a new file.
