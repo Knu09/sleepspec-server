@@ -12,7 +12,6 @@ import shutil
 import matplotlib.pyplot as plt
 import scipy.fftpack as fft
 from scipy.signal import medfilt
-from pedalboard import *
 
 
 def check_audio_extension(input_file: Path):
@@ -75,26 +74,6 @@ def background_noise_removal(y, sr):
 
     return y_clean
 
-
-def noise_reduction(y, sr, stationary=False, prop_decrease=0.75):
-
-    # Spectral gaiting noise reduction
-    reduced_noise = nr.reduce_noise(
-        y=y, sr=sr, stationary=stationary, prop_decrease=prop_decrease
-    )
-
-    # Apply effects chain (Noise Gate, Compressor, EQ, Gain)
-    board = Pedalboard(
-        [
-            NoiseGate(threshold_db=30, ratio=1.5, release_ms=250),
-            Compressor(threshold_db=16, ratio=2.5),
-            LowShelfFilter(cutoff_frequency_hz=400, gain_db=10, q=1),
-            Gain(gain_db=10),
-        ]
-    )
-
-    effected = board(reduced_noise, sr)
-    return effected
 
 
 # Define preprocessing function
