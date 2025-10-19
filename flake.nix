@@ -90,7 +90,7 @@
           name = "sleepspec-server";
           runtimeInputs = [pythonEnv pkgs.ffmpeg];
           text = ''
-            gunicorn -w ''${WORKERS:-4} server:app --bind 0.0.0.0:''${PORT:-5000}
+            gunicorn -w "''${WORKERS:-4}" server:app --bind 0.0.0.0:"''${PORT:-5000}"
           '';
         };
       };
