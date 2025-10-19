@@ -86,7 +86,7 @@
           '';
         };
 
-        packages.default = pkgs.writeShellApplication {
+        packages.runner = pkgs.writeShellApplication {
           name = "sleepspec-server";
           runtimeInputs = [pythonEnv pkgs.ffmpeg];
           text = ''
