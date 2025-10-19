@@ -55,6 +55,7 @@
 
         pythonEnv = pkgs.python312.withPackages (ps:
           with ps; [
+            gunicorn
             flask
             flask_cors
             librosa
