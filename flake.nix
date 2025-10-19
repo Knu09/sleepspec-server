@@ -15,10 +15,14 @@
         pkgs,
         ...
       }: let
+        builders = with pkgs.python312Packages; [poetry-core setuptools];
+
         # Define noisereduce package
         noisereduce = pkgs.python312Packages.buildPythonPackage rec {
           pname = "noisereduce";
           version = "3.0.3"; # Specify the desired version
+          pyproject = true;
+          build-system = [builders];
 
           src = pkgs.fetchPypi {
             inherit pname version;
@@ -30,12 +34,22 @@
             homepage = "https://github.com/timsainb/noisereduce";
             license = licenses.mit;
           };
+
+          propagatedBuildInputs = with pkgs.python312Packages; [
+            joblib
+            matplotlib
+            scipy
+            numpy
+            tqdm
+          ];
         };
 
         # Define flask_cors package
         flask_cors = pkgs.python312Packages.buildPythonPackage rec {
           pname = "flask_cors";
           version = "5.0.0"; # Specify the desired version
+          pyproject = true;
+          build-system = [builders];
 
           src = pkgs.fetchPypi {
             inherit pname version;
@@ -59,13 +73,9 @@
             flask
             flask_cors
             librosa
-            matplotlib
             noisereduce
-            numpy
             pydub
             scikit-learn
-            scipy
-            tqdm
           ]);
       in {
         devShells.default = pkgs.mkShell {
