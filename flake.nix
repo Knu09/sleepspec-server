@@ -85,6 +85,14 @@
             echo "Run in dev mode and allow all hosts: flask --app server run --host=0.0.0.0"
           '';
         };
+
+        packages.default = pkgs.writeShellApplication {
+          name = "sleepspec-server";
+          runtimeInputs = [pythonEnv pkgs.ffmpeg];
+          text = ''
+            gunicorn -w 8 server:app --bind 0.0.0.0:5000
+          '';
+        };
       };
     };
 }
