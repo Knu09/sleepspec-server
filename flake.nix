@@ -53,7 +53,7 @@
           ];
         };
 
-        pythonPkgs = pkgs.python312.withPackages (ps:
+        pythonEnv = pkgs.python312.withPackages (ps:
           with ps; [
             flask
             flask_cors
@@ -72,7 +72,7 @@
 
           packages = [
             pkgs.python312
-            pythonPkgs
+            pythonEnv
           ];
 
           buildInputs = with pkgs; [
