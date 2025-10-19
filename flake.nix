@@ -72,7 +72,6 @@
           name = "flask-ml-env";
 
           packages = [
-            pkgs.python312
             pythonEnv
           ];
 
