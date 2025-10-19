@@ -93,6 +93,11 @@
             gunicorn -w "''${WORKERS:-4}" server:app --bind 0.0.0.0:"''${PORT:-5000}"
           '';
         };
+
+        apps.default = {
+          type = "app";
+          program = "${config.packages.runner}/bin/sleepspec-server";
+        };
       };
     };
 }
