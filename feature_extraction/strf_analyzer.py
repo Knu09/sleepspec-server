@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any
+from globals import OUTDIR
 import numpy as np
 from feature_extraction import utils
 from feature_extraction import auditory
@@ -13,11 +13,11 @@ import matplotlib.pyplot as plt
 from concurrent.futures import ProcessPoolExecutor, as_completed
 
 # Add output_dir for Flask app initialization
-output_dir = Path("feature_analysis/strf_plots")
+output_dir = Path(OUTDIR / "feature_analysis/strf_plots")
 output_dir.mkdir(parents=True, exist_ok=True)
 
 # Define the directory containing the audio files
-audio_dir = Path("preprocess/preprocessed_audio/processed_audio/")
+audio_dir = Path(OUTDIR / "preprocess/preprocessed_audio/processed_audio")
 
 
 class STRFAnalyzer:

@@ -1,30 +1,31 @@
 import io
-import zipfile
-from feature_extraction.strf_analyzer import STRFAnalyzer
-from feature_extraction.run_extraction import feature_extract_segments
-from preprocess.preprocess import preprocess_audio
+import os
+import pickle
 import sys
-from werkzeug.utils import secure_filename
-from flask import Flask, request, jsonify, send_from_directory, send_file
+import zipfile
+from dataclasses import dataclass
+from enum import Enum
+from http import HTTPStatus
+from pathlib import Path
+
+import numpy as np
+from flask import Flask, jsonify, request, send_file, send_from_directory
 from flask_cors import CORS
 from pydub import AudioSegment
-from pathlib import Path
-from http import HTTPStatus
-from enum import Enum
-from dataclasses import dataclass
-import pickle
-import numpy as np
-from scipy.special import softmax
-from sklearn.metrics import balanced_accuracy_score
+from werkzeug.utils import secure_filename
 
+from feature_extraction.run_extraction import feature_extract_segments
+from feature_extraction.strf_analyzer import STRFAnalyzer
+from preprocess.preprocess import preprocess_audio
 from profiler import profile
+from globals import OUTDIR
 
 sys.path.append("preprocess/")
 sys.path.append("feature_extraction/")
 
 app = Flask(__name__)
 CORS(app)
-uploads_path = Path("tmp/uploads")
+uploads_path = Path(OUTDIR / "uploads")
 
 strf_analyzer = STRFAnalyzer()
 
@@ -77,15 +78,17 @@ class Classification:
 @app.route("/plots/<uuid:uid>/<path:filename>")
 def get_plot(filename, uid):
     print(f"Requesting plot: {filename}")
-    path = (Path("feature_analysis/strf_plots") /
-            str(uid)).resolve(strict=True)
+    path = (Path(OUTDIR / "feature_analysis/strf_plots") / str(uid)).resolve(strict=True)
     return send_from_directory(path, filename)
 
 
 @app.route("/segments/<uuid:uid>")
 def Segments(uid):
-    segments_dir = Path(
-        "preprocess/preprocessed_audio/processed_audio") / str(uid) / "segmented_audio"
+    segments_dir = (
+        Path(OUTDIR / "preprocess/preprocessed_audio/processed_audio")
+        / str(uid)
+        / "segmented_audio"
+    )
 
     # Construct an in-memory zip file
     zip_buffer = io.BytesIO()
@@ -112,14 +115,12 @@ def Upload(uid):
     audio_file = request.files["audio"]
 
     # parse noiseRemoval request
-    noise_removal_flag = request.form.get(
-        "noiseRemoval", "false").lower() == "true"
+    noise_removal_flag = request.form.get("noiseRemoval", "false").lower() == "true"
 
     if audio_file.filename:
         (uploads_path / str(uid)).mkdir(parents=True, exist_ok=True)
 
-        file_path = uploads_path / \
-            str(uid) / secure_filename(audio_file.filename)
+        file_path = uploads_path / str(uid) / secure_filename(audio_file.filename)
         audio_file.save(file_path)
 
         wav_file = convertWAV(file_path)
@@ -224,10 +225,10 @@ def predict_features(features, svm, pca):
     avg_sd_prob = sum_sd_prob / len(sd_prob_scores)
     avg_nsd_prob = sum_nsd_prob / len(nsd_prob_scores)
     avg_decision_score = np.mean(decision_scores) if decision_scores else 0.0
-    avg_sd_decision_score = np.mean(
-        sd_decision_scores) if sd_decision_scores else 0.0
-    avg_nsd_decision_score = np.mean(
-        nsd_decision_scores) if nsd_decision_scores else 0.0
+    avg_sd_decision_score = np.mean(sd_decision_scores) if sd_decision_scores else 0.0
+    avg_nsd_decision_score = (
+        np.mean(nsd_decision_scores) if nsd_decision_scores else 0.0
+    )
 
     # Adjusted confidence scoring
     if sd_counter == nsd_counter:
@@ -287,15 +288,11 @@ def classify(audio_path: Path, uid, noise_removal_flag) -> Classification:
         svm_path (str): Path to the trained SVM model (.pkl file).
         pca_path (str): Path to the trained PCA model (.pkl file).
     """
-    svm_path = Path(
-        "./updated_model/svm_pca_strf_ncomp24_2025-05-29.pkl"
-    )
+    svm_path = Path("./updated_model/svm_pca_strf_ncomp24_2025-05-29.pkl")
 
     print(f"Model: {svm_path}")
 
-    test_sample_path = Path(
-        "./strf_data_new.pkl"
-    )
+    test_sample_path = Path("./strf_data_new.pkl")
 
     # Load the SVM and PCA models using pickle
     with open(svm_path, "rb") as f:
@@ -303,14 +300,15 @@ def classify(audio_path: Path, uid, noise_removal_flag) -> Classification:
     svm = data["svm"]
     pca = data["pca"]
     # Define the output directory, if necessary to be stored
-    output_dir_processed = Path(
-        "preprocess/preprocessed_audio/processed_audio") / str(uid)
-    output_dir_features = Path("feature_extraction/extracted_features/feature")
+    output_dir_processed = Path(OUTDIR / "preprocess/preprocessed_audio/processed_audio") / str(
+        uid
+    )
     output_dir_segmented = output_dir_processed / "segmented_audio"
 
     # Preprocess
     segments, sr = preprocess_audio(
-        audio_path, output_dir_processed, noise_removal_flag)
+        audio_path, output_dir_processed, noise_removal_flag
+    )
 
     # Compute and save STRFs
     avg_scale_rate, avg_freq_rate, avg_freq_scale = strf_analyzer.compute_avg_strf(
@@ -320,7 +318,7 @@ def classify(audio_path: Path, uid, noise_removal_flag) -> Classification:
         avg_scale_rate,
         avg_freq_rate,
         avg_freq_scale,
-        Path("feature_analysis/strf_plots") / str(uid),
+        Path(OUTDIR / "feature_analysis/strf_plots") / str(uid),
     )
 
     # Print details
