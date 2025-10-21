@@ -97,24 +97,33 @@
         };
 
         packages.default = let
+          name = "sleepspec-server";
+          inputs = [pythonEnv pkgs.ffmpeg];
+
           runner = pkgs.writeShellApplication {
             name = "runner";
+            runtimeInputs = inputs;
             text = ''
               gunicorn -w "''${WORKERS:-4}" server:app --bind 0.0.0.0:"''${PORT:-5000}"
             '';
           };
         in
-          pkgs.stdenv.mkDerivation rec {
-            name = "sleepspec-server";
+          pkgs.stdenv.mkDerivation {
+            name = name;
             src = ./.;
-            buildInputs = [pythonEnv pkgs.ffmpeg];
+            buildInputs = inputs;
             installPhase = ''
               mkdir -p $out/bin
               cp -r ./* $out
 
-              cp ${runner}/bin/runner $out/bin/${name}
+              cp ${runner}/bin/runner $out
             '';
           };
+
+        apps.default = {
+          type = "app";
+          program = "${config.packages.default}/runner";
+        };
       };
     };
 }
