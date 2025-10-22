@@ -100,7 +100,7 @@
           inputs = [pythonEnv pkgs.ffmpeg];
 
           sleepspec-server-pkg = pkgs.stdenv.mkDerivation {
-            name = "sleepspec-server";
+            name = "sleepspec-server-pkg";
             src = ./.;
             buildInputs = inputs;
             installPhase = ''
@@ -110,7 +110,7 @@
           };
         in
           pkgs.writeShellApplication {
-            name = "runner";
+            name = "sleepspec-server";
             runtimeInputs = inputs;
             text = ''
               cd ${sleepspec-server-pkg}
