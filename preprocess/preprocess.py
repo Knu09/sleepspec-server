@@ -97,7 +97,68 @@ def noise_reduction(y, sr, stationary=False, prop_decrease=0.75):
     return effected
 
 
+def wiener_noise_reduction(y, sr):
+    print("Background noise reduction: active (using Wiener Filter)")
+
+    # The Wiener filter class works on files, so we create a temporary one.
+    with tempfile.TemporaryDirectory() as temp_dir:
+        temp_dir_path = Path(temp_dir)
+        # Create a temporary path for the noisy input file
+        temp_noisy_path = temp_dir_path / "temp_noisy_audio.wav"
+
+        # Save the in-memory audio array 'y' to the temporary file
+        sf.write(temp_noisy_path, y, sr)
+
+        # --- NEW: Wiener Filter Implementation ---
+        try:
+            # The Wiener class constructor needs the base filename (without extension)
+            # and the start/end time of a known noise segment.
+            # We ASSUME the first 0.5 seconds of the recording is stationary noise.
+            noise_start_time = 0.0
+            noise_end_time = 0.5
+
+            # Check if the audio is long enough for the noise profile
+            if len(y) / sr > noise_end_time:
+                print(f"Using first {noise_end_time}s for noise profile.")
+                # Instantiate the filter
+                wiener_filter = Wiener(
+                    str(temp_noisy_path.with_suffix("")),
+                    noise_start_time,
+                    noise_end_time,
+                )
+
+                # Apply the two-step Wiener filter. This saves a new file.
+                wiener_filter.wiener_two_step()
+
+                # Define the path where the cleaned file was saved
+                # The class appends '_wiener_two_step.wav' to the original name
+                cleaned_file_path = (
+                    temp_dir_path / f"{temp_noisy_path.stem}_wiener_two_step.wav"
+                )
+
+                if cleaned_file_path.exists():
+                    # Load the cleaned audio data back into our 'y' variable
+                    y, _ = sf.read(cleaned_file_path)
+                    print("Wiener filtering applied successfully.")
+                else:
+                    print(
+                        "Warning: Wiener filter output file not found. Skipping noise reduction."
+                    )
+            else:
+                print(
+                    "Warning: Audio too short for noise profiling. Skipping noise reduction."
+                )
+
+        except Exception as e:
+            print(f"An error occurred during Wiener filtering: {e}")
+            print("Skipping noise reduction and proceeding with original audio.")
+    # The temporary directory and its contents are automatically deleted here.
+    return y, sr
+
+
 # Define preprocessing function
+
+
 def preprocess_audio(
     input_file,
     output_dir=Path(""),
@@ -145,58 +206,13 @@ def preprocess_audio(
 
     # Check if noise removal is active in client-side
     if noise_removal_flag:
-        print("Background noise reduction: active (using Wiener Filter)")
+        y, sr = wiener_noise_reduction(y, sr)
 
-        # The Wiener filter class works on files, so we create a temporary one.
-        with tempfile.TemporaryDirectory() as temp_dir:
-            temp_dir_path = Path(temp_dir)
-            # Create a temporary path for the noisy input file
-            temp_noisy_path = temp_dir_path / "temp_noisy_audio.wav"
-
-            # Save the in-memory audio array 'y' to the temporary file
-            sf.write(temp_noisy_path, y, sr)
-
-            # --- NEW: Wiener Filter Implementation ---
-            try:
-                # The Wiener class constructor needs the base filename (without extension)
-                # and the start/end time of a known noise segment.
-                # We ASSUME the first 0.5 seconds of the recording is stationary noise.
-                noise_start_time = 0.0
-                noise_end_time = 0.5
-
-                # Check if the audio is long enough for the noise profile
-                if len(y) / sr > noise_end_time:
-                    print(f"Using first {noise_end_time}s for noise profile.")
-                    # Instantiate the filter
-                    wiener_filter = Wiener(
-                        str(temp_noisy_path.with_suffix('')),
-                        noise_start_time,
-                        noise_end_time
-                    )
-
-                    # Apply the two-step Wiener filter. This saves a new file.
-                    wiener_filter.wiener_two_step()
-
-                    # Define the path where the cleaned file was saved
-                    # The class appends '_wiener_two_step.wav' to the original name
-                    cleaned_file_path = temp_dir_path / \
-                        f"{temp_noisy_path.stem}_wiener_two_step.wav"
-
-                    if cleaned_file_path.exists():
-                        # Load the cleaned audio data back into our 'y' variable
-                        y, _ = sf.read(cleaned_file_path)
-                        print("Wiener filtering applied successfully.")
-                    else:
-                        print(
-                            "Warning: Wiener filter output file not found. Skipping noise reduction.")
-                else:
-                    print(
-                        "Warning: Audio too short for noise profiling. Skipping noise reduction.")
-
-            except Exception as e:
-                print(f"An error occurred during Wiener filtering: {e}")
-                print("Skipping noise reduction and proceeding with original audio.")
-        # The temporary directory and its contents are automatically deleted here.
+        # TODO: Deep Learning-based Noise reduction
+        """
+            Either use tiny_denoiser or DeepFilterNet
+            
+        """
 
     else:
         print("Background noise reduction: inactive")
