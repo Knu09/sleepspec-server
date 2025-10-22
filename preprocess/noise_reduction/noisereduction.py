@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 from scipy.fftpack import fft, ifft
 import scipy.io.wavfile as wav
 import scipy.signal as sg
@@ -36,7 +35,7 @@ class Wiener:
         """
         Input :
             WAV_FILE
-            T_NOISE : float, Time in seconds /!\ Only works if stationnary noise is at the beginning of x /!\
+            T_NOISE : float, Time in seconds - Only works if stationnary noise is at the beginning of x
 
         """
         # Constants are defined here
