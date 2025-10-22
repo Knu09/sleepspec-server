@@ -97,11 +97,10 @@
         };
 
         packages.default = let
-          name = "sleepspec-server";
           inputs = [pythonEnv pkgs.ffmpeg];
 
           sleepspec-server-pkg = pkgs.stdenv.mkDerivation {
-            name = name;
+            name = "sleepspec-server";
             src = ./.;
             buildInputs = inputs;
             installPhase = ''
