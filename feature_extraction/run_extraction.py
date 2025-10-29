@@ -25,13 +25,6 @@ from profiler import profile
 
 sys.path.append(str(Path(__file__).resolve().parent))
 
-
-####
-
-# wav_file = "neutral_337-364_0356.wav"
-# wav_file = "sleepiness_281-308_0308.wav"
-# wav_file = "data/segment_1.wav"
-
 rates_vec = [
     -32,
     -22.6,
@@ -57,19 +50,6 @@ rates_vec = [
     32,
 ]
 scales_vec = [0.71, 1.0, 1.41, 2.00, 2.83, 4.00, 5.66, 8.00]
-
-# wav_file = "../preprocess/processed_audio/segment_68.wav"
-# input_dir = "../preprocess/processed_audio/"
-# input_dir = "/home/christian/Desktop/C_005/THESIS/Datasets/Predi_COVID19_Fatigue_Voice_Recording/fatigue/TypeW/Type1/"
-# output_dir = "extracted_features/Predi_extracted_features/"
-
-# input_dir = "/home/christian/Desktop/C_005/THESIS/training/16Khz-training/preprocess/preprocessed_audio/preprocess_audio_erik/"
-# output_dir = "extracted_features/erik_extracted_features/"
-
-# wav_file = "Predi-COVID_0098_20200624100830_1_m4a_W_0.wav"
-# wav_file = "Predi-COVID_0090_20200627194317_1_m4a_M_0.wav"
-# wav_file = "Predi-COVID_0221_20200715141551_1_m4a_W_0.wav"
-# audio, fs = utils.audio_data('soundTest.aiff')
 
 
 def extract_features(audio_segment, fs):
@@ -138,72 +118,3 @@ def feature_extract_segments(segment_audio_arr, sample_rate):
         features = [future.result() for future in futures]
 
     return features
-
-
-# feature_extract_segments(input_dir, output_dir, sample_rate)
-
-# with open("strf_data_new.pkl", "rb") as f:  # 'rb' mode for reading in binary
-#     loaded_strf_data = pickle.load(f)
-
-# print(strf)
-
-#     scale_rate,
-#     aspect="auto",
-#     origin="lower",
-#     extent=[rates_vec[0], rates_vec[-1], scales_vec[0], scales_vec[-1]],
-# )
-# plt.colorbar(label="Modulation Energy")
-# plt.xlabel("Temporal Modulation Rate (Hz)") plt.ylabel("Spectral Modulation Scale (cyc/oct)")
-# plt.title("Rate-Scale Representation of Spectro-Temporal Modulation")
-# plt.show()
-
-
-# plt.imshow(
-#     np.transpose(auditory_spectrogram_[:][1:80]),
-#     aspect="auto",
-#     interpolation="gaussian",
-#     origin="lower",
-# )
-# plt.show()
-# print(auditory_spectrogram_)
-# print(strf.shape)
-
-# avgvec = plotslib.strf2avgvec(strf)
-# strf_scale_rate, strf_freq_rate, strf_freq_scale = plotslib.avgvec2strfavg(
-#     avgvec, nbScales=len(scales_vec), nbRates=len(rates_vec)
-# )
-
-
-# plt.figure(figsize=(8, 6))
-# plt.imshow(
-#     strf_scale_rate,
-#     aspect="auto",
-#     origin="lower",
-#     extent=[rates_vec[0], rates_vec[-1], scales_vec[0], scales_vec[-1]],
-#     interpolation="gaussian",
-#     cmap="viridis",
-# )
-#
-# plt.colorbar(label="Modulation Energy (Amplitude)")
-# plt.xlabel("Temporal Modulation Rate (Hz)")
-# plt.ylabel("Spectral Modulation Scale (cyc/oct)")
-# plt.title("Rate-Scale Representation (strf_scale_rate)")
-# plt.show()
-
-# scale-rate, freq-rate, freq-scale
-# plotslib.plotStrfavgEqual(
-#     strf_scale_rate, strf_freq_rate, strf_freq_scale, cmap="viridis"
-# )
-
-# strf_data = {
-#     "strf": real_valued_strf,
-#     "fs": 44100,
-# }
-#
-# with open("strf_data_new.pkl", "wb") as f:
-#     pickle.dump(strf_data, f)
-#
-# with open("strf_data_new.pkl", "rb") as f:  # 'rb' mode for reading in binary
-#     loaded_strf_data = pickle.load(f)
-#
-# print(loaded_strf_data["strf"])
