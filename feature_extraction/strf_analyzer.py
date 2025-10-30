@@ -81,35 +81,20 @@ class STRFAnalyzer:
         return strf_scale_rate, strf_freq_rate, strf_freq_scale
 
     @profile
-    def compute_avg_strf(self, audio_dir: Path):
-        # Initialize accumulators for scale-rate, freq-rate, and freq-scale
-        feature_tensors = {
-            "total_scale_rate": np.zeros((len(self.scales_vec), len(self.rates_vec))),
-            "total_freq_rate": np.zeros((128, len(self.rates_vec))),
-            "total_freq_scale": np.zeros((128, len(self.scales_vec))),
-        }
+    def compute_avg_strf(self, features):
+        # Stack STRF arrays along a new axis (segments)
+        stacked = np.stack(features, axis=0)
 
-        # Batch process all audio files in the directory
-        with ProcessPoolExecutor(max_workers=6) as executor:
-            futures = [
-                executor.submit(self.segment_strf, wav_file)
-                for wav_file in audio_dir.iterdir()
-            ]
+        # Average over all segments
+        avg_strf = np.mean(stacked, axis=0)  # Shape: (128, 8, 22)
 
-        for f in as_completed(futures):
-            sr, fr, fs = f.result()
-            feature_tensors["total_scale_rate"] += sr
-            feature_tensors["total_freq_rate"] += fr
-            feature_tensors["total_freq_scale"] += fs
-
-        num_files = len(futures)
+        # Derive three projections
+        avg_scale_rate = np.mean(avg_strf, axis=0)  # (8, 22)
+        avg_freq_rate = np.mean(avg_strf, axis=1)  # (128, 22)
+        avg_freq_scale = np.mean(avg_strf, axis=2)  # (128, 8)
 
         # Average the results
-        return (
-            feature_tensors["total_scale_rate"] / num_files,
-            feature_tensors["total_freq_rate"] / num_files,
-            feature_tensors["total_freq_scale"] / num_files,
-        )
+        return avg_scale_rate, avg_freq_rate, avg_freq_scale
 
     def save_plots(self, scale_rate, freq_rate, freq_scale, output_dir: Path):
         """Save STRF visualizations"""

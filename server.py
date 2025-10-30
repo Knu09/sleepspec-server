@@ -310,17 +310,6 @@ def classify(audio_path: Path, uid, noise_removal_flag) -> Classification:
         audio_path, output_dir_processed, noise_removal_flag
     )
 
-    # Compute and save STRFs
-    avg_scale_rate, avg_freq_rate, avg_freq_scale = strf_analyzer.compute_avg_strf(
-        output_dir_segmented
-    )
-    strf_analyzer.save_plots(
-        avg_scale_rate,
-        avg_freq_rate,
-        avg_freq_scale,
-        Path(OUTDIR / "feature_analysis/strf_plots") / str(uid),
-    )
-
     # Print details
     print(f"Number of segments: {len(segments)}")
     print(f"Sampling rate: {sr} Hz")
@@ -328,6 +317,18 @@ def classify(audio_path: Path, uid, noise_removal_flag) -> Classification:
     # Feature Extraction
     features = feature_extract_segments(segments, sr)
     print("Feature Extraction Complete.")
+
+    # Compute and save STRFs
+    avg_scale_rate, avg_freq_rate, avg_freq_scale = strf_analyzer.compute_avg_strf(
+        features
+    )
+    strf_analyzer.save_plots(
+        avg_scale_rate,
+        avg_freq_rate,
+        avg_freq_scale,
+        Path(OUTDIR / "feature_analysis/strf_plots") / str(uid),
+    )
+    print(f"Avg STRF computation and plots complete.")
 
     # test_sample = pickle.load(test_sample_path)
     # with open(test_sample_path, "rb") as f:
@@ -360,7 +361,7 @@ def classify(audio_path: Path, uid, noise_removal_flag) -> Classification:
 
     print(f"\nsuccess: {is_success}\n")
     if adjusted_confidence_score == 50:
-        result_text = "Your sleep pattern is balanced."
+        result_text = "The classification score is balanced."
         sd_class = SD_Class.BALANCED
     elif adjusted_confidence_score > 50:
         result_text = "You are sleep-deprived."
