@@ -114,7 +114,7 @@
             runtimeInputs = inputs;
             text = ''
               cd ${sleepspec-server-pkg}
-              gunicorn -w "''${WORKERS:-4}" server:app --bind 0.0.0.0:"''${PORT:-5000}"
+              gunicorn -w "''${WORKERS:-4}" server:app --bind "''${HOST:-localhost}":"''${PORT:-5000}"
             '';
           };
       };
