@@ -5,6 +5,7 @@ All rights reserved
 
 """
 
+import os
 from feature_extraction import utils
 from feature_extraction import plotslib
 from feature_extraction import auditory
@@ -105,8 +106,9 @@ def process_segment(i, segment, sample_rate):
 
 @profile
 def feature_extract_segments(segment_audio_arr, sample_rate):
+    workers = os.getenv("MAX_WORKERS") or 2
 
-    with ProcessPoolExecutor(max_workers=6) as executor:
+    with ProcessPoolExecutor(max_workers=workers) as executor:
         # Submit in order and keep the futures in the same order
 
         futures = [
