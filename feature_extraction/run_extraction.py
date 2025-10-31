@@ -5,8 +5,10 @@ All rights reserved
 
 """
 
+import os
 import pickle
 import sys
+from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 
 import numpy as np
@@ -96,9 +98,17 @@ def process_segment(i, segment, sample_rate):
 
 @profile
 def feature_extract_segments(segment_audio_arr, sample_rate):
-    features = [
-        process_segment(i, segment, sample_rate)
-        for i, segment in enumerate(segment_audio_arr)
-    ]
+    workers = os.getenv("MAX_WORKERS") or 2
+
+    with ProcessPoolExecutor(max_workers=workers) as executor:
+        # Submit in order and keep the futures in the same order
+
+        futures = [
+            executor.submit(process_segment, i, segment, sample_rate)
+            for i, segment in enumerate(segment_audio_arr)
+        ]
+
+        # Retrieve results in the same order as submitted
+        features = [future.result() for future in futures]
 
     return features
