@@ -14,6 +14,7 @@ from pathlib import Path
 import numpy as np
 
 from feature_extraction import auditory, utils
+from globals import MAX_WORKERS
 from profiler import profile
 
 sys.path.append(str(Path(__file__).resolve().parent))
@@ -98,9 +99,7 @@ def process_segment(i, segment, sample_rate):
 
 @profile
 def feature_extract_segments(segment_audio_arr, sample_rate):
-    workers = os.getenv("MAX_WORKERS") or 2
-
-    with ProcessPoolExecutor(max_workers=workers) as executor:
+    with ProcessPoolExecutor(max_workers=MAX_WORKERS) as executor:
         # Submit in order and keep the futures in the same order
 
         futures = [
