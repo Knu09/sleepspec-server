@@ -99,7 +99,7 @@
         packages.default = let
           inputs = [pythonEnv pkgs.ffmpeg];
 
-          sleepspec-server-pkg = pkgs.stdenv.mkDerivation {
+          sleepspec-server-pkg = pkgs.stdenvNoCC.mkDerivation {
             name = "sleepspec-server-pkg";
             src = ./.;
             buildInputs = inputs;
