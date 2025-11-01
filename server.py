@@ -24,7 +24,7 @@ sys.path.append("preprocess/")
 sys.path.append("feature_extraction/")
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, origins="*", supports_credentials=True)
 uploads_path = Path(OUTDIR / "uploads")
 
 strf_analyzer = STRFAnalyzer()
@@ -78,7 +78,8 @@ class Classification:
 @app.route("/plots/<uuid:uid>/<path:filename>")
 def get_plot(filename, uid):
     print(f"Requesting plot: {filename}")
-    path = (Path(OUTDIR / "feature_analysis/strf_plots") / str(uid)).resolve(strict=True)
+    path = (Path(OUTDIR / "feature_analysis/strf_plots") /
+            str(uid)).resolve(strict=True)
     return send_from_directory(path, filename)
 
 
@@ -115,12 +116,14 @@ def Upload(uid):
     audio_file = request.files["audio"]
 
     # parse noiseRemoval request
-    noise_removal_flag = request.form.get("noiseRemoval", "false").lower() == "true"
+    noise_removal_flag = request.form.get(
+        "noiseRemoval", "false").lower() == "true"
 
     if audio_file.filename:
         (uploads_path / str(uid)).mkdir(parents=True, exist_ok=True)
 
-        file_path = uploads_path / str(uid) / secure_filename(audio_file.filename)
+        file_path = uploads_path / \
+            str(uid) / secure_filename(audio_file.filename)
         audio_file.save(file_path)
 
         wav_file = convertWAV(file_path)
@@ -225,7 +228,8 @@ def predict_features(features, svm, pca):
     avg_sd_prob = sum_sd_prob / len(sd_prob_scores)
     avg_nsd_prob = sum_nsd_prob / len(nsd_prob_scores)
     avg_decision_score = np.mean(decision_scores) if decision_scores else 0.0
-    avg_sd_decision_score = np.mean(sd_decision_scores) if sd_decision_scores else 0.0
+    avg_sd_decision_score = np.mean(
+        sd_decision_scores) if sd_decision_scores else 0.0
     avg_nsd_decision_score = (
         np.mean(nsd_decision_scores) if nsd_decision_scores else 0.0
     )
