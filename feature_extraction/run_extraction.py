@@ -5,23 +5,17 @@ All rights reserved
 
 """
 
-from feature_extraction import utils
-from feature_extraction import plotslib
-from feature_extraction import auditory
-from numpy.ma import append
-import matplotlib.pylab as plt
-from librosa import feature
-
-import scipy.io as sio
-from scipy.fft import ifft2, ifftshift
-import numpy as np
+import os
 import pickle
 import sys
+from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 
-from concurrent.futures import ProcessPoolExecutor
-from profiler import profile
+import numpy as np
 
+from feature_extraction import auditory, utils
+from globals import MAX_WORKERS
+from profiler import profile
 
 sys.path.append(str(Path(__file__).resolve().parent))
 
@@ -105,8 +99,7 @@ def process_segment(i, segment, sample_rate):
 
 @profile
 def feature_extract_segments(segment_audio_arr, sample_rate):
-
-    with ProcessPoolExecutor(max_workers=6) as executor:
+    with ProcessPoolExecutor(max_workers=MAX_WORKERS) as executor:
         # Submit in order and keep the futures in the same order
 
         futures = [

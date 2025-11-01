@@ -10,7 +10,6 @@ from profiler import profile
 
 matplotlib.use("Agg")  # Use non-GUI backend
 import matplotlib.pyplot as plt
-from concurrent.futures import ProcessPoolExecutor, as_completed
 
 # Add output_dir for Flask app initialization
 output_dir = Path(OUTDIR / "feature_analysis/strf_plots")

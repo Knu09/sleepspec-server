@@ -97,11 +97,10 @@
         };
 
         packages.default = let
-          name = "sleepspec-server";
           inputs = [pythonEnv pkgs.ffmpeg];
 
-          sleepspec-server-pkg = pkgs.stdenv.mkDerivation {
-            name = name;
+          sleepspec-server-pkg = pkgs.stdenvNoCC.mkDerivation {
+            name = "sleepspec-server-pkg";
             src = ./.;
             buildInputs = inputs;
             installPhase = ''
@@ -111,11 +110,11 @@
           };
         in
           pkgs.writeShellApplication {
-            name = "runner";
+            name = "sleepspec-server";
             runtimeInputs = inputs;
             text = ''
               cd ${sleepspec-server-pkg}
-              gunicorn -w "''${WORKERS:-4}" server:app --bind 0.0.0.0:"''${PORT:-5000}"
+              gunicorn -t "''${TIMEOUT:-300}" -w "''${WORKERS:-4}" server:app --bind "''${HOST:-localhost}":"''${PORT:-5000}"
             '';
           };
       };
