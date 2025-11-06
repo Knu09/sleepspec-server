@@ -13,6 +13,86 @@ import matplotlib.pyplot as plt
 import scipy.fftpack as fft
 from scipy.signal import medfilt
 
+import torch
+import torchaudio
+from DeepFilterNet import DeepFilterNet
+
+dfnet = DeepFilterNet()
+
+
+def deepfilternet_noise_reduction(y, sr, target_sr=16000):
+    """
+    Applies DeepFilterNet noise reduction.
+    Handles resampling to 48kHz and back to the target sample rate.
+    """
+    print("Background noise reduction: active (using DeepFilterNet2)")
+    try:
+        # Convert numpy array to torch tensor
+        audio_tensor = torch.from_numpy(y).float()
+
+        # 1. Resample from the current sr (e.g., 16kHz) to the required 48kHz
+        resampler_to_48k = torchaudio.transforms.Resample(
+            orig_freq=sr, new_freq=48000)
+        audio_48k = resampler_to_48k(audio_tensor)
+
+        # 2. Enhance the audio (model expects a batch, so we add a dimension)
+        enhanced_audio_48k = dfnet.enhance(audio_48k.unsqueeze(0))
+
+        # 3. Resample back down to the pipeline's target sample rate (16kHz)
+        resampler_to_target = torchaudio.transforms.Resample(
+            orig_freq=48000, new_freq=target_sr)
+        enhanced_audio_target_sr = resampler_to_target(
+            enhanced_audio_48k.squeeze(0))
+
+        # 4. Convert back to a numpy array for the rest of the pipeline
+        y_clean = enhanced_audio_target_sr.numpy()
+        print("DeepFilterNet filtering applied successfully.")
+        return y_clean, target_sr
+
+    except Exception as e:
+        print(f"An error occurred during DeepFilterNet filtering: {e}")
+        print("Skipping noise reduction and proceeding with original audio.")
+        # Return original audio if an error occurs
+        return y, sr
+
+
+def wiener_noise_reduction(y, sr):
+    """Applies the Wiener filter noise reduction."""
+    print("Background noise reduction: active (using Wiener Filter)")
+    try:
+        # The Wiener filter class works on files, so we create a temporary one.
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_dir_path = Path(temp_dir)
+            temp_noisy_path = temp_dir_path / "temp_noisy_audio.wav"
+            sf.write(temp_noisy_path, y, sr)
+
+            noise_start_time = 0.0
+            noise_end_time = 0.5
+
+            if len(y) / sr > noise_end_time:
+                print(f"Using first {noise_end_time}s for noise profile.")
+                wiener_filter = Wiener(
+                    str(temp_noisy_path.with_suffix('')),
+                    noise_start_time,
+                    noise_end_time
+                )
+                wiener_filter.wiener_two_step()
+                cleaned_file_path = temp_dir_path / \
+                    f"{temp_noisy_path.stem}_wiener_two_step.wav"
+
+                if cleaned_file_path.exists():
+                    y, _ = sf.read(cleaned_file_path)
+                    print("Wiener filtering applied successfully.")
+                else:
+                    print("Warning: Wiener filter output file not found. Skipping.")
+            else:
+                print("Warning: Audio too short for noise profiling. Skipping.")
+    except Exception as e:
+        print(f"An error occurred during Wiener filtering: {e}")
+        print("Skipping noise reduction.")
+
+    return y, sr
+
 
 def check_audio_extension(input_file: Path):
     ext = input_file.suffix.lower()
@@ -75,7 +155,6 @@ def background_noise_removal(y, sr):
     return y_clean
 
 
-
 def wiener_noise_reduction(y, sr):
     print("Background noise reduction: active (using Wiener Filter)")
 
@@ -112,7 +191,8 @@ def wiener_noise_reduction(y, sr):
                 # Define the path where the cleaned file was saved
                 # The class appends '_wiener_two_step.wav' to the original name
                 cleaned_file_path = (
-                    temp_dir_path / f"{temp_noisy_path.stem}_wiener_two_step.wav"
+                    temp_dir_path /
+                    f"{temp_noisy_path.stem}_wiener_two_step.wav"
                 )
 
                 if cleaned_file_path.exists():
@@ -141,7 +221,7 @@ def wiener_noise_reduction(y, sr):
 def preprocess_audio(
     input_file,
     output_dir=Path(""),
-    noise_removal_flag=False,
+    noise_removal_method="none",
     segment_length=15,
     target_sr=16000,
 ):
@@ -183,40 +263,24 @@ def preprocess_audio(
         y = librosa.resample(y, orig_sr=sr, target_sr=target_sr)
         sr = target_sr
 
-    # Check if noise removal is active in client-side
-    if noise_removal_flag:
+    # selects which function to call based on the method string.
+    if noise_removal_method == 'wiener':
         y, sr = wiener_noise_reduction(y, sr)
-
-        # TODO: Deep Learning-based Noise reduction
-        """
-            Either use tiny_denoiser or DeepFilterNet
-            
-        """
-
+    elif noise_removal_method == 'deepfilternet':
+        y, sr = deepfilternet_noise_reduction(y, sr, target_sr)
     else:
         print("Background noise reduction: inactive")
 
-    # Get the base filename of the audio (excluding extension)
     audio_filename = Path(input_file).stem
-
-    # Calculate segment length in samples
     segment_samples = segment_length * sr
-
-    # Split and save segments
     segments = []
-
     for i, start in enumerate(range(0, len(y), segment_samples)):
         end = start + segment_samples
         segment = y[start:end]
-        if len(segment) == segment_samples:  # includes full-length segments only
+        if len(segment) == segment_samples:
             segments.append(segment)
-            # Save segment to disk if output_dir is provided
             if output_dir:
                 file = segmented_dir / f"segment_{i + 1}.wav"
-                sf.write(
-                    file,
-                    segment,
-                    sr,
-                )
+                sf.write(file, segment, sr)
 
     return segments, sr
