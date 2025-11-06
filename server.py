@@ -115,9 +115,9 @@ def Upload(uid):
 
     audio_file = request.files["audio"]
 
-    # parse noiseRemoval request
-    noise_removal_flag = request.form.get(
-        "noiseRemoval", "false").lower() == "true"
+    # parse noiseRemovalMethod request
+    noise_removal_method = request.form.get("noiseRemovalMethod", "none")
+    print(f"Noise removal method selected: {noise_removal_method}")
 
     if audio_file.filename:
         (uploads_path / str(uid)).mkdir(parents=True, exist_ok=True)
@@ -127,7 +127,7 @@ def Upload(uid):
         audio_file.save(file_path)
 
         wav_file = convertWAV(file_path)
-        clf = classify(wav_file, uid, noise_removal_flag)
+        clf = classify(wav_file, uid, noise_removal_method)
 
         return (
             clf.into_json(),
@@ -279,7 +279,7 @@ def predict_features(features, svm, pca):
 
 
 @profile
-def classify(audio_path: Path, uid, noise_removal_flag) -> Classification:
+def classify(audio_path: Path, uid, noise_removal_method) -> Classification:
     """
     Predict the class labels for the given STM features array of 3D using the trained SVM and PCA models.
 
@@ -307,7 +307,7 @@ def classify(audio_path: Path, uid, noise_removal_flag) -> Classification:
 
     # Preprocess
     segments, sr = preprocess_audio(
-        audio_path, output_dir_processed, noise_removal_flag
+        audio_path, output_dir_processed, noise_removal_method
     )
 
     # Print details
