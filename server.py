@@ -174,11 +174,7 @@ def predict_features(features, svm, pca):
 
         expected_features = pca.components_.shape[1]
         if feature_flat.shape[0] != expected_features:
-            raise ValueError(
-                f"Feature mismatch! Expected {expected_features}, got {
-                    feature_flat.shape[0]
-                }."
-            )
+            raise ValueError(f"Feature mismatch! Expected {expected_features}, got {feature_flat.shape[0]}.")
 
         # PCA transformation
         feature_pca = pca.transform(feature_reshaped)
