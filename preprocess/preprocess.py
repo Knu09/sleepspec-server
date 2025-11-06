@@ -57,6 +57,44 @@ def deepfilternet_noise_reduction(y, sr, target_sr=16000):
         return y, sr
 
 
+def wiener_noise_reduction(y, sr):
+    """Applies the Wiener filter noise reduction."""
+    print("Background noise reduction: active (using Wiener Filter)")
+    try:
+        # The Wiener filter class works on files, so we create a temporary one.
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_dir_path = Path(temp_dir)
+            temp_noisy_path = temp_dir_path / "temp_noisy_audio.wav"
+            sf.write(temp_noisy_path, y, sr)
+
+            noise_start_time = 0.0
+            noise_end_time = 0.5
+
+            if len(y) / sr > noise_end_time:
+                print(f"Using first {noise_end_time}s for noise profile.")
+                wiener_filter = Wiener(
+                    str(temp_noisy_path.with_suffix('')),
+                    noise_start_time,
+                    noise_end_time
+                )
+                wiener_filter.wiener_two_step()
+                cleaned_file_path = temp_dir_path / \
+                    f"{temp_noisy_path.stem}_wiener_two_step.wav"
+
+                if cleaned_file_path.exists():
+                    y, _ = sf.read(cleaned_file_path)
+                    print("Wiener filtering applied successfully.")
+                else:
+                    print("Warning: Wiener filter output file not found. Skipping.")
+            else:
+                print("Warning: Audio too short for noise profiling. Skipping.")
+    except Exception as e:
+        print(f"An error occurred during Wiener filtering: {e}")
+        print("Skipping noise reduction.")
+
+    return y, sr
+
+
 def check_audio_extension(input_file: Path):
     ext = input_file.suffix.lower()
     if ext != ".wav":
@@ -143,7 +181,7 @@ def noise_reduction(y, sr, stationary=False, prop_decrease=0.75):
 def preprocess_audio(
     input_file,
     output_dir=Path(""),
-    noise_removal_flag=False,
+    noise_removal_method="none",
     segment_length=15,
     target_sr=16000,
 ):
