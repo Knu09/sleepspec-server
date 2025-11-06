@@ -15,9 +15,9 @@ from scipy.signal import medfilt
 
 import torch
 import torchaudio
-from DeepFilterNet import DeepFilterNet
+from df.enhance import enhance, init_df
 
-dfnet = DeepFilterNet()
+df_model, df_state, _ = init_df()
 
 
 def deepfilternet_noise_reduction(y, sr, target_sr=16000):
@@ -36,7 +36,7 @@ def deepfilternet_noise_reduction(y, sr, target_sr=16000):
         audio_48k = resampler_to_48k(audio_tensor)
 
         # 2. Enhance the audio (model expects a batch, so we add a dimension)
-        enhanced_audio_48k = dfnet.enhance(audio_48k.unsqueeze(0))
+        enhanced_audio_48k = enhance(df_model, df_state, audio_48k)
 
         # 3. Resample back down to the pipeline's target sample rate (16kHz)
         resampler_to_target = torchaudio.transforms.Resample(
