@@ -14,6 +14,48 @@ import scipy.fftpack as fft
 from scipy.signal import medfilt
 from pedalboard import *
 
+import torch
+import torchaudio
+from DeepFilterNet import DeepFilterNet
+
+dfnet = DeepFilterNet()
+
+
+def deepfilternet_noise_reduction(y, sr, target_sr=16000):
+    """
+    Applies DeepFilterNet noise reduction.
+    Handles resampling to 48kHz and back to the target sample rate.
+    """
+    print("Background noise reduction: active (using DeepFilterNet2)")
+    try:
+        # Convert numpy array to torch tensor
+        audio_tensor = torch.from_numpy(y).float()
+
+        # 1. Resample from the current sr (e.g., 16kHz) to the required 48kHz
+        resampler_to_48k = torchaudio.transforms.Resample(
+            orig_freq=sr, new_freq=48000)
+        audio_48k = resampler_to_48k(audio_tensor)
+
+        # 2. Enhance the audio (model expects a batch, so we add a dimension)
+        enhanced_audio_48k = dfnet.enhance(audio_48k.unsqueeze(0))
+
+        # 3. Resample back down to the pipeline's target sample rate (16kHz)
+        resampler_to_target = torchaudio.transforms.Resample(
+            orig_freq=48000, new_freq=target_sr)
+        enhanced_audio_target_sr = resampler_to_target(
+            enhanced_audio_48k.squeeze(0))
+
+        # 4. Convert back to a numpy array for the rest of the pipeline
+        y_clean = enhanced_audio_target_sr.numpy()
+        print("DeepFilterNet filtering applied successfully.")
+        return y_clean, target_sr
+
+    except Exception as e:
+        print(f"An error occurred during DeepFilterNet filtering: {e}")
+        print("Skipping noise reduction and proceeding with original audio.")
+        # Return original audio if an error occurs
+        return y, sr
+
 
 def check_audio_extension(input_file: Path):
     ext = input_file.suffix.lower()
