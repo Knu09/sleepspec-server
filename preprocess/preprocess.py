@@ -223,85 +223,24 @@ def preprocess_audio(
         y = librosa.resample(y, orig_sr=sr, target_sr=target_sr)
         sr = target_sr
 
-    # Check if noise removal is active in client-side
-    if noise_removal_flag:
-        print("Background noise reduction: active (using Wiener Filter)")
-
-        # The Wiener filter class works on files, so we create a temporary one.
-        with tempfile.TemporaryDirectory() as temp_dir:
-            temp_dir_path = Path(temp_dir)
-            # Create a temporary path for the noisy input file
-            temp_noisy_path = temp_dir_path / "temp_noisy_audio.wav"
-
-            # Save the in-memory audio array 'y' to the temporary file
-            sf.write(temp_noisy_path, y, sr)
-
-            # --- NEW: Wiener Filter Implementation ---
-            try:
-                # The Wiener class constructor needs the base filename (without extension)
-                # and the start/end time of a known noise segment.
-                # We ASSUME the first 0.5 seconds of the recording is stationary noise.
-                noise_start_time = 0.0
-                noise_end_time = 0.5
-
-                # Check if the audio is long enough for the noise profile
-                if len(y) / sr > noise_end_time:
-                    print(f"Using first {noise_end_time}s for noise profile.")
-                    # Instantiate the filter
-                    wiener_filter = Wiener(
-                        str(temp_noisy_path.with_suffix('')),
-                        noise_start_time,
-                        noise_end_time
-                    )
-
-                    # Apply the two-step Wiener filter. This saves a new file.
-                    wiener_filter.wiener_two_step()
-
-                    # Define the path where the cleaned file was saved
-                    # The class appends '_wiener_two_step.wav' to the original name
-                    cleaned_file_path = temp_dir_path / \
-                        f"{temp_noisy_path.stem}_wiener_two_step.wav"
-
-                    if cleaned_file_path.exists():
-                        # Load the cleaned audio data back into our 'y' variable
-                        y, _ = sf.read(cleaned_file_path)
-                        print("Wiener filtering applied successfully.")
-                    else:
-                        print(
-                            "Warning: Wiener filter output file not found. Skipping noise reduction.")
-                else:
-                    print(
-                        "Warning: Audio too short for noise profiling. Skipping noise reduction.")
-
-            except Exception as e:
-                print(f"An error occurred during Wiener filtering: {e}")
-                print("Skipping noise reduction and proceeding with original audio.")
-        # The temporary directory and its contents are automatically deleted here.
-
+    # selects which function to call based on the method string.
+    if noise_removal_method == 'wiener':
+        y, sr = wiener_noise_reduction(y, sr)
+    elif noise_removal_method == 'deepfilternet':
+        y, sr = deepfilternet_noise_reduction(y, sr, target_sr)
     else:
         print("Background noise reduction: inactive")
 
-    # Get the base filename of the audio (excluding extension)
     audio_filename = Path(input_file).stem
-
-    # Calculate segment length in samples
     segment_samples = segment_length * sr
-
-    # Split and save segments
     segments = []
-
     for i, start in enumerate(range(0, len(y), segment_samples)):
         end = start + segment_samples
         segment = y[start:end]
-        if len(segment) == segment_samples:  # includes full-length segments only
+        if len(segment) == segment_samples:
             segments.append(segment)
-            # Save segment to disk if output_dir is provided
             if output_dir:
                 file = segmented_dir / f"segment_{i + 1}.wav"
-                sf.write(
-                    file,
-                    segment,
-                    sr,
-                )
+                sf.write(file, segment, sr)
 
     return segments, sr
