@@ -117,7 +117,7 @@ def Upload(uid):
 
     # parse noiseRemoval request
     noise_removal_flag = request.form.get(
-        "noiseRemoval", "false").lower() == "true"
+        "wienerFiltering", "false").lower() == "true"
 
     if audio_file.filename:
         (uploads_path / str(uid)).mkdir(parents=True, exist_ok=True)
