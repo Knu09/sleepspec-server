@@ -127,7 +127,7 @@ def Upload(uid):
         audio_file.save(file_path)
 
         wav_file = convertWAV(file_path)
-        clf = classify(wav_file, uid, noise_removal_flag)
+        clf = classify(wav_file, uid, noise_removal_method)
 
         return (
             clf.into_json(),
@@ -174,11 +174,7 @@ def predict_features(features, svm, pca):
 
         expected_features = pca.components_.shape[1]
         if feature_flat.shape[0] != expected_features:
-            raise ValueError(
-                f"Feature mismatch! Expected {expected_features}, got {
-                    feature_flat.shape[0]
-                }."
-            )
+            raise ValueError(f"Feature mismatch! Expected {expected_features}, got {feature_flat.shape[0]}.")
 
         # PCA transformation
         feature_pca = pca.transform(feature_reshaped)
@@ -283,7 +279,7 @@ def predict_features(features, svm, pca):
 
 
 @profile
-def classify(audio_path: Path, uid, noise_removal_flag) -> Classification:
+def classify(audio_path: Path, uid, noise_removal_method) -> Classification:
     """
     Predict the class labels for the given STM features array of 3D using the trained SVM and PCA models.
 
@@ -311,7 +307,7 @@ def classify(audio_path: Path, uid, noise_removal_flag) -> Classification:
 
     # Preprocess
     segments, sr = preprocess_audio(
-        audio_path, output_dir_processed, noise_removal_flag
+        audio_path, output_dir_processed, noise_removal_method
     )
 
     # Print details
