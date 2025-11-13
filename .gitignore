@@ -7,6 +7,9 @@ __pycache__/
 updated_model/svm_pca_Strf_n_comp=24.pkl
 *.txt
 
+# .expo
+.expo/
+
 # C extensions
 *.so
     

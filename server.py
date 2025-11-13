@@ -292,7 +292,7 @@ def classify(audio_path: Path, uid, noise_removal_flag) -> Classification:
         svm_path (str): Path to the trained SVM model (.pkl file).
         pca_path (str): Path to the trained PCA model (.pkl file).
     """
-    svm_path = Path("./updated_model/svm_pca_strf_ncomp24_2025-05-29.pkl")
+    svm_path = Path("./updated_model/svm_pca_strf_ncomp24_2025-11-10.pkl")
 
     print(f"Model: {svm_path}")
 
