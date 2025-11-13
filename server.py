@@ -115,9 +115,9 @@ def Upload(uid):
 
     audio_file = request.files["audio"]
 
-    # parse noiseRemovalMethod request
-    noise_removal_method = request.form.get("noiseRemovalMethod", "none")
-    print(f"Noise removal method selected: {noise_removal_method}")
+    # parse noiseRemoval request
+    noise_removal_flag = request.form.get(
+        "wienerFiltering", "false").lower() == "true"
 
     if audio_file.filename:
         (uploads_path / str(uid)).mkdir(parents=True, exist_ok=True)
@@ -288,7 +288,7 @@ def classify(audio_path: Path, uid, noise_removal_method) -> Classification:
         svm_path (str): Path to the trained SVM model (.pkl file).
         pca_path (str): Path to the trained PCA model (.pkl file).
     """
-    svm_path = Path("./updated_model/svm_pca_strf_ncomp24_2025-05-29.pkl")
+    svm_path = Path("./updated_model/svm_pca_strf_ncomp24_2025-11-10.pkl")
 
     print(f"Model: {svm_path}")
 
