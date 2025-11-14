@@ -69,6 +69,8 @@
 
         pythonEnv = pkgs.python312.withPackages (ps:
           with ps; [
+            torch
+            torchaudio
             gunicorn
             flask
             flask_cors
@@ -87,6 +89,7 @@
 
           buildInputs = with pkgs; [
             ffmpeg # for pydub audio processing
+            deepfilternet
           ];
 
           shellHook = ''
