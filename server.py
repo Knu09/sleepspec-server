@@ -115,9 +115,9 @@ def Upload(uid):
 
     audio_file = request.files["audio"]
 
-    # parse noiseRemoval request
-    noise_removal_flag = request.form.get(
-        "wienerFiltering", "false").lower() == "true"
+    # parse noiseRemovalMethod request
+    noise_removal_method = request.form.get("noiseRemovalMethod", "none")
+    print(f"Noise removal method selected: {noise_removal_method}")
 
     if audio_file.filename:
         (uploads_path / str(uid)).mkdir(parents=True, exist_ok=True)
@@ -138,7 +138,6 @@ def Upload(uid):
         jsonify({"error": "There was a problem saving the file"}),
         HTTPStatus.INTERNAL_SERVER_ERROR,
     )
-
 
 def predict_features(features, svm, pca):
     if not features:
