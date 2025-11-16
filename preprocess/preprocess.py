@@ -28,6 +28,10 @@ def deepfilternet_noise_reduction(y, sr, target_sr=16000):
         print("--- Skipping noise reduction.")
 
 
+    with tempfile.TemporaryDirectory() as temp_dir:
+        temp_dir_path = Path(temp_dir)
+        input_path = temp_dir_path / "input_audio.wav"
+
     try:
         # Convert numpy array to torch tensor
         audio_tensor = torch.from_numpy(y).float()
