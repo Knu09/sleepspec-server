@@ -20,7 +20,14 @@ def deepfilternet_noise_reduction(y, sr, target_sr=16000):
     Applies DeepFilterNet noise reduction.
     Handles resampling to 48kHz and back to the target sample rate.
     """
-    print("Background noise reduction: active (using DeepFilterNet2)")
+    print("Background noise reduction: active (using DeepFilterNet)")
+
+    binary_path = Path("preprocess/noise_reduction/deepfilternet/deep-filter-0.5.6-x86_64-unknown-linux-musl")
+    if not binary_path.is_file():
+        print(f"--- ERROR: The binary was not found.")
+        print("--- Skipping noise reduction.")
+
+
     try:
         # Convert numpy array to torch tensor
         audio_tensor = torch.from_numpy(y).float()
