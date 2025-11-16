@@ -1,3 +1,4 @@
+import os
 import shutil
 import subprocess
 import tempfile
@@ -19,9 +20,7 @@ def deepfilternet_noise_reduction(y, sr, target_sr=16000):
     """
     print("Background noise reduction: active (using DeepFilterNet)")
 
-    binary_path = Path(
-        "preprocess/noise_reduction/deepfilternet/deep-filter-0.5.6-aarch64-unknown-linux-gnu"
-    )
+    binary_path = Path(os.getenv("DEEPFILTER_BIN"))
     if not binary_path.is_file():
         print("--- ERROR: The binary was not found.")
         print("--- Skipping noise reduction.")
