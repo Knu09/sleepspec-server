@@ -32,12 +32,21 @@ def deepfilternet_noise_reduction(y, sr, target_sr=16000):
         temp_dir_path = Path(temp_dir)
         input_path = temp_dir_path / "input_audio.wav"
 
+        # resample 16khz to 48khz
         if sr != 48000:
             print(f"Resampling audio from {sr}Hz to 48000Hz for DeepFilterNet binary.")
             y = librosa.resample(y, orig_sr=sr, target_sr=48000)
             sr = 48000
         
         sf.write(input_path, y, sr)
+
+        # commands of deepfilter
+        command = [
+            str(binary_path),
+            "--out-dir", str(temp_dir_path),  
+            str(input_path)                 
+        ]
+
 
     try:
         # Convert numpy array to torch tensor
