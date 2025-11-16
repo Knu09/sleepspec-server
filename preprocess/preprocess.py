@@ -1,3 +1,4 @@
+import subprocess
 import tempfile
 from .noise_reduction.noisereduction import Wiener
 
@@ -12,12 +13,6 @@ import shutil
 import matplotlib.pyplot as plt
 import scipy.fftpack as fft
 from scipy.signal import medfilt
-
-import torch
-import torchaudio
-from df.enhance import enhance, init_df
-
-df_model, df_state, _ = init_df()
 
 
 def deepfilternet_noise_reduction(y, sr, target_sr=16000):
@@ -55,7 +50,6 @@ def deepfilternet_noise_reduction(y, sr, target_sr=16000):
         print("Skipping noise reduction and proceeding with original audio.")
         # Return original audio if an error occurs
         return y, sr
-
 
 # def wiener_noise_reduction(y, sr):
 #     """Applies the Wiener filter noise reduction."""
