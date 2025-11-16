@@ -1,18 +1,15 @@
+import shutil
 import subprocess
 import tempfile
-from .noise_reduction.noisereduction import Wiener
+from pathlib import Path
 
 import librosa
-from pathlib import Path
-import soundfile as sf
 import numpy as np
-import noisereduce as nr
+import soundfile as sf
 from pydub import AudioSegment
-from pydub.silence import split_on_silence
-import shutil
-import matplotlib.pyplot as plt
-import scipy.fftpack as fft
 from scipy.signal import medfilt
+
+from .noise_reduction.noisereduction import Wiener
 
 
 def deepfilternet_noise_reduction(y, sr, target_sr=16000):
@@ -22,11 +19,12 @@ def deepfilternet_noise_reduction(y, sr, target_sr=16000):
     """
     print("Background noise reduction: active (using DeepFilterNet)")
 
-    binary_path = Path("preprocess/noise_reduction/deepfilternet/deep-filter-0.5.6-x86_64-unknown-linux-musl")
+    binary_path = Path(
+        "preprocess/noise_reduction/deepfilternet/deep-filter-0.5.6-aarch64-unknown-linux-gnu"
+    )
     if not binary_path.is_file():
-        print(f"--- ERROR: The binary was not found.")
+        print("--- ERROR: The binary was not found.")
         print("--- Skipping noise reduction.")
-
 
     with tempfile.TemporaryDirectory() as temp_dir:
         temp_dir_path = Path(temp_dir)
@@ -37,42 +35,46 @@ def deepfilternet_noise_reduction(y, sr, target_sr=16000):
             print(f"Resampling audio from {sr}Hz to 48000Hz for DeepFilterNet binary.")
             y = librosa.resample(y, orig_sr=sr, target_sr=48000)
             sr = 48000
-        
+
         sf.write(input_path, y, sr)
 
         # commands of deepfilter
         command = [
             str(binary_path),
-            "--output-dir", str(temp_dir_path),  
-            str(input_path)                 
+            "--output-dir",
+            str(temp_dir_path),
+            str(input_path),
         ]
-
 
         try:
             print(f"Executing command: {' '.join(command)}")
             subprocess.run(command, check=True, capture_output=True, text=True)
-            
+
             # find the output file inside the temp directory.
             output_path = temp_dir_path / "input_audio.wav"
-            
+
             if not output_path.exists():
                 # if it's not found, maybe it adds a suffix.
                 all_wavs = list(temp_dir_path.glob("*.wav"))
                 if len(all_wavs) > 0:
                     # assume it's the right one
-                    output_path = all_wavs[0] 
+                    output_path = all_wavs[0]
                 else:
-                    raise FileNotFoundError("Enhanced file not found in output directory.")
+                    raise FileNotFoundError(
+                        "Enhanced file not found in output directory."
+                    )
 
             print("DeepFilterNet binary process completed successfully.")
 
             y_clean, sr_clean = sf.read(output_path)
-            
+
             # resample the clean audio back down to the pipeline's target SR.
             if sr_clean != target_sr:
-                y_clean = librosa.resample(y_clean, orig_sr=sr_clean, target_sr=target_sr)
+                y_clean = librosa.resample(
+                    y_clean, orig_sr=sr_clean, target_sr=target_sr
+                )
                 sr_clean = target_sr
-                
+
             return y_clean, sr_clean
 
         except subprocess.CalledProcessError as e:
@@ -83,9 +85,13 @@ def deepfilternet_noise_reduction(y, sr, target_sr=16000):
             print("\n--- Skipping noise reduction. ---\n")
             return y, sr
         except FileNotFoundError as e:
-            print(f"\n--- ERROR: Could not find the enhanced audio file after processing. {e}")
+            print(
+                f"\n--- ERROR: Could not find the enhanced audio file after processing. {e}"
+            )
             print("--- Skipping noise reduction. ---\n")
             return y, sr
+
+
 # def wiener_noise_reduction(y, sr):
 #     """Applies the Wiener filter noise reduction."""
 #     print("Background noise reduction: active (using Wiener Filter)")
@@ -221,8 +227,7 @@ def wiener_noise_reduction(y, sr):
                 # Define the path where the cleaned file was saved
                 # The class appends '_wiener_two_step.wav' to the original name
                 cleaned_file_path = (
-                    temp_dir_path /
-                    f"{temp_noisy_path.stem}_wiener_two_step.wav"
+                    temp_dir_path / f"{temp_noisy_path.stem}_wiener_two_step.wav"
                 )
 
                 if cleaned_file_path.exists():
@@ -294,9 +299,9 @@ def preprocess_audio(
         sr = target_sr
 
     # selects which function to call based on the method string.
-    if noise_removal_method == 'wiener':
+    if noise_removal_method == "wiener":
         y, sr = wiener_noise_reduction(y, sr)
-    elif noise_removal_method == 'deepfilternet':
+    elif noise_removal_method == "deepfilternet":
         y, sr = deepfilternet_noise_reduction(y, sr, target_sr)
     else:
         print("Background noise reduction: inactive")
