@@ -75,7 +75,17 @@ def deepfilternet_noise_reduction(y, sr, target_sr=16000):
                 
             return y_clean, sr_clean
 
-
+        except subprocess.CalledProcessError as e:
+            print("\n--- ERROR: The DeepFilterNet binary command failed. ---")
+            print(f"--- Return Code: {e.returncode}")
+            print("\n--- Error details (stderr) from the command: ---")
+            print(e.stderr)
+            print("\n--- Skipping noise reduction. ---\n")
+            return y, sr
+        except FileNotFoundError as e:
+            print(f"\n--- ERROR: Could not find the enhanced audio file after processing. {e}")
+            print("--- Skipping noise reduction. ---\n")
+            return y, sr
 # def wiener_noise_reduction(y, sr):
 #     """Applies the Wiener filter noise reduction."""
 #     print("Background noise reduction: active (using Wiener Filter)")
