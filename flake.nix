@@ -15,69 +15,34 @@
         pkgs,
         ...
       }: let
-        builders = with pkgs.python312Packages; [poetry-core setuptools];
-
-        # Define noisereduce package
-        noisereduce = pkgs.python312Packages.buildPythonPackage rec {
-          pname = "noisereduce";
-          version = "3.0.3"; # Specify the desired version
-          pyproject = true;
-          build-system = [builders];
-
-          src = pkgs.fetchPypi {
-            inherit pname version;
-            sha256 = "ff64a28fb92e3c81f153cf29550e5c2db56b2523afa8f56f5e03c177cc5e918f";
-          };
-
-          meta = with pkgs.lib; {
-            description = "Noise reduction algorithm in Python using spectral gating";
-            homepage = "https://github.com/timsainb/noisereduce";
-            license = licenses.mit;
-          };
-
-          propagatedBuildInputs = with pkgs.python312Packages; [
-            joblib
-            matplotlib
-            scipy
-            numpy
-            tqdm
-          ];
-        };
+        python = pkgs.python312Packages;
 
         # Define flask_cors package
-        flask_cors = pkgs.python312Packages.buildPythonPackage rec {
+        flask_cors = python.buildPythonPackage {
           pname = "flask_cors";
           version = "5.0.0"; # Specify the desired version
-          pyproject = true;
-          build-system = [builders];
+          format = "wheel";
 
-          src = pkgs.fetchPypi {
-            inherit pname version;
-            sha256 = "5aadb4b950c4e93745034594d9f3ea6591f734bb3662e16e255ffbf5e89c88ef";
+          src = pkgs.fetchurl {
+            url = "https://files.pythonhosted.org/packages/56/07/1afa0514c876282bebc1c9aee83c6bb98fe6415cf57b88d9b06e7e29bf9c/Flask_Cors-5.0.0-py2.py3-none-any.whl";
+            sha256 = "b9e307d082a9261c100d8fb0ba909eec6a228ed1b60a8315fd85f783d61910bc";
           };
-
           meta = with pkgs.lib; {
             description = "A Flask extension for handling Cross Origin Resource Sharing (CORS), making cross-origin AJAX possible.";
             homepage = "https://github.com/corydolphin/flask-cors";
             license = licenses.mit;
           };
-
-          propagatedBuildInputs = with pkgs.python312Packages; [
-            flask
-          ];
         };
 
         pythonEnv = pkgs.python312.withPackages (ps:
           with ps; [
-            torch
-            torchaudio
             gunicorn
             flask
             flask_cors
             librosa
-            noisereduce
             pydub
             scikit-learn
+            matplotlib
           ]);
       in {
         devShells.default = pkgs.mkShell {
@@ -89,7 +54,6 @@
 
           buildInputs = with pkgs; [
             ffmpeg # for pydub audio processing
-            deepfilternet
           ];
 
           shellHook = ''
