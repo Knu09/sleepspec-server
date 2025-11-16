@@ -48,35 +48,33 @@ def deepfilternet_noise_reduction(y, sr, target_sr=16000):
         ]
 
 
-    try:
-        # Convert numpy array to torch tensor
-        audio_tensor = torch.from_numpy(y).float()
+        try:
+            print(f"Executing command: {' '.join(command)}")
+            subprocess.run(command, check=True, capture_output=True, text=True)
+            
+            # find the output file inside the temp directory.
+            output_path = temp_dir_path / "input_audio.wav"
+            
+            if not output_path.exists():
+                # if it's not found, maybe it adds a suffix.
+                all_wavs = list(temp_dir_path.glob("*.wav"))
+                if len(all_wavs) > 0:
+                    # assume it's the right one
+                    output_path = all_wavs[0] 
+                else:
+                    raise FileNotFoundError("Enhanced file not found in output directory.")
 
-        # 1. Resample from the current sr (e.g., 16kHz) to the required 48kHz
-        resampler_to_48k = torchaudio.transforms.Resample(
-            orig_freq=sr, new_freq=48000)
-        audio_48k = resampler_to_48k(audio_tensor)
+            print("DeepFilterNet binary process completed successfully.")
 
-        # 2. Enhance the audio (model expects a batch, so we add a dimension)
-        # enhanced_audio_48k = enhance(df_model, df_state, audio_48k)
-        enhanced_audio_48k = enhance(df_model, df_state, audio_48k.unsqueeze(0))
+            y_clean, sr_clean = sf.read(output_path)
+            
+            # resample the clean audio back down to the pipeline's target SR.
+            if sr_clean != target_sr:
+                y_clean = librosa.resample(y_clean, orig_sr=sr_clean, target_sr=target_sr)
+                sr_clean = target_sr
+                
+            return y_clean, sr_clean
 
-        # 3. Resample back down to the pipeline's target sample rate (16kHz)
-        resampler_to_target = torchaudio.transforms.Resample(
-            orig_freq=48000, new_freq=target_sr)
-        enhanced_audio_target_sr = resampler_to_target(
-            enhanced_audio_48k.squeeze(0))
-
-        # 4. Convert back to a numpy array for the rest of the pipeline
-        y_clean = enhanced_audio_target_sr.numpy()
-        print("DeepFilterNet filtering applied successfully.")
-        return y_clean, target_sr
-
-    except Exception as e:
-        print(f"An error occurred during DeepFilterNet filtering: {e}")
-        print("Skipping noise reduction and proceeding with original audio.")
-        # Return original audio if an error occurs
-        return y, sr
 
 # def wiener_noise_reduction(y, sr):
 #     """Applies the Wiener filter noise reduction."""
