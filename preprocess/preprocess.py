@@ -1,3 +1,4 @@
+import subprocess
 import tempfile
 from .noise_reduction.noisereduction import Wiener
 
@@ -13,50 +14,78 @@ import matplotlib.pyplot as plt
 import scipy.fftpack as fft
 from scipy.signal import medfilt
 
-import torch
-import torchaudio
-from df.enhance import enhance, init_df
-
-df_model, df_state, _ = init_df()
-
 
 def deepfilternet_noise_reduction(y, sr, target_sr=16000):
     """
     Applies DeepFilterNet noise reduction.
     Handles resampling to 48kHz and back to the target sample rate.
     """
-    print("Background noise reduction: active (using DeepFilterNet2)")
-    try:
-        # Convert numpy array to torch tensor
-        audio_tensor = torch.from_numpy(y).float()
+    print("Background noise reduction: active (using DeepFilterNet)")
 
-        # 1. Resample from the current sr (e.g., 16kHz) to the required 48kHz
-        resampler_to_48k = torchaudio.transforms.Resample(
-            orig_freq=sr, new_freq=48000)
-        audio_48k = resampler_to_48k(audio_tensor)
-
-        # 2. Enhance the audio (model expects a batch, so we add a dimension)
-        # enhanced_audio_48k = enhance(df_model, df_state, audio_48k)
-        enhanced_audio_48k = enhance(df_model, df_state, audio_48k.unsqueeze(0))
-
-        # 3. Resample back down to the pipeline's target sample rate (16kHz)
-        resampler_to_target = torchaudio.transforms.Resample(
-            orig_freq=48000, new_freq=target_sr)
-        enhanced_audio_target_sr = resampler_to_target(
-            enhanced_audio_48k.squeeze(0))
-
-        # 4. Convert back to a numpy array for the rest of the pipeline
-        y_clean = enhanced_audio_target_sr.numpy()
-        print("DeepFilterNet filtering applied successfully.")
-        return y_clean, target_sr
-
-    except Exception as e:
-        print(f"An error occurred during DeepFilterNet filtering: {e}")
-        print("Skipping noise reduction and proceeding with original audio.")
-        # Return original audio if an error occurs
-        return y, sr
+    binary_path = Path("preprocess/noise_reduction/deepfilternet/deep-filter-0.5.6-x86_64-unknown-linux-musl")
+    if not binary_path.is_file():
+        print(f"--- ERROR: The binary was not found.")
+        print("--- Skipping noise reduction.")
 
 
+    with tempfile.TemporaryDirectory() as temp_dir:
+        temp_dir_path = Path(temp_dir)
+        input_path = temp_dir_path / "input_audio.wav"
+
+        # resample 16khz to 48khz
+        if sr != 48000:
+            print(f"Resampling audio from {sr}Hz to 48000Hz for DeepFilterNet binary.")
+            y = librosa.resample(y, orig_sr=sr, target_sr=48000)
+            sr = 48000
+        
+        sf.write(input_path, y, sr)
+
+        # commands of deepfilter
+        command = [
+            str(binary_path),
+            "--output-dir", str(temp_dir_path),  
+            str(input_path)                 
+        ]
+
+
+        try:
+            print(f"Executing command: {' '.join(command)}")
+            subprocess.run(command, check=True, capture_output=True, text=True)
+            
+            # find the output file inside the temp directory.
+            output_path = temp_dir_path / "input_audio.wav"
+            
+            if not output_path.exists():
+                # if it's not found, maybe it adds a suffix.
+                all_wavs = list(temp_dir_path.glob("*.wav"))
+                if len(all_wavs) > 0:
+                    # assume it's the right one
+                    output_path = all_wavs[0] 
+                else:
+                    raise FileNotFoundError("Enhanced file not found in output directory.")
+
+            print("DeepFilterNet binary process completed successfully.")
+
+            y_clean, sr_clean = sf.read(output_path)
+            
+            # resample the clean audio back down to the pipeline's target SR.
+            if sr_clean != target_sr:
+                y_clean = librosa.resample(y_clean, orig_sr=sr_clean, target_sr=target_sr)
+                sr_clean = target_sr
+                
+            return y_clean, sr_clean
+
+        except subprocess.CalledProcessError as e:
+            print("\n--- ERROR: The DeepFilterNet binary command failed. ---")
+            print(f"--- Return Code: {e.returncode}")
+            print("\n--- Error details (stderr) from the command: ---")
+            print(e.stderr)
+            print("\n--- Skipping noise reduction. ---\n")
+            return y, sr
+        except FileNotFoundError as e:
+            print(f"\n--- ERROR: Could not find the enhanced audio file after processing. {e}")
+            print("--- Skipping noise reduction. ---\n")
+            return y, sr
 # def wiener_noise_reduction(y, sr):
 #     """Applies the Wiener filter noise reduction."""
 #     print("Background noise reduction: active (using Wiener Filter)")
