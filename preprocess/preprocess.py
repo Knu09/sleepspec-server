@@ -289,7 +289,7 @@ def preprocess_audio(
     y, sr = load_audio_with_soundfile(input_file)
 
     # Resample to 16kHz if not in target sampling rate
-    if sr != target_sr:
+    if sr != target_sr and noise_removal_method != "deepfilternet":
         y = librosa.resample(y, orig_sr=sr, target_sr=target_sr)
         sr = target_sr
 
@@ -301,7 +301,6 @@ def preprocess_audio(
     else:
         print("Background noise reduction: inactive")
 
-    audio_filename = Path(input_file).stem
     segment_samples = segment_length * sr
     segments = []
     for i, start in enumerate(range(0, len(y), segment_samples)):
