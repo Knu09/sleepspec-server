@@ -43,7 +43,7 @@ def deepfilternet_noise_reduction(y, sr, target_sr=16000):
         # commands of deepfilter
         command = [
             str(binary_path),
-            "--out-dir", str(temp_dir_path),  
+            "--output-dir", str(temp_dir_path),  
             str(input_path)                 
         ]
 
