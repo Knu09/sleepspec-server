@@ -13,6 +13,8 @@ from scipy.signal import medfilt
 from .noise_reduction.noisereduction import Wiener
 
 
+DF_BIN = Path(os.getenv("DEEPFILTER_BIN"))
+
 def deepfilternet_noise_reduction(y, sr, target_sr=16000):
     """
     Applies DeepFilterNet noise reduction.
@@ -20,8 +22,7 @@ def deepfilternet_noise_reduction(y, sr, target_sr=16000):
     """
     print("Background noise reduction: active (using DeepFilterNet)")
 
-    binary_path = Path(os.getenv("DEEPFILTER_BIN"))
-    if not binary_path.is_file():
+    if not DF_BIN.is_file():
         print("--- ERROR: The binary was not found.")
         print("--- Skipping noise reduction.")
 
@@ -39,7 +40,7 @@ def deepfilternet_noise_reduction(y, sr, target_sr=16000):
 
         # commands of deepfilter
         command = [
-            str(binary_path),
+            str(DF_BIN),
             "--output-dir",
             str(temp_dir_path),
             str(input_path),
