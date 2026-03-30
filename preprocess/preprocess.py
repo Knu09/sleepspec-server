@@ -12,8 +12,8 @@ from scipy.signal import medfilt
 
 from .noise_reduction.noisereduction import Wiener
 
+# DF_BIN = Path(os.getenv("DEEPFILTER_BIN"))
 
-DF_BIN = Path(os.getenv("DEEPFILTER_BIN"))
 
 def deepfilternet_noise_reduction(y, sr, target_sr=16000):
     """
@@ -22,7 +22,10 @@ def deepfilternet_noise_reduction(y, sr, target_sr=16000):
     """
     print("Background noise reduction: active (using DeepFilterNet)")
 
-    if not DF_BIN.is_file():
+    binary_path = Path(
+        "preprocess/noise_reduction/deepfilternet/deep-filter-0.5.6-aarch64-unknown-linux-gnu"
+    )
+    if not binary_path.is_file():
         print("--- ERROR: The binary was not found.")
         print("--- Skipping noise reduction.")
 
@@ -32,7 +35,8 @@ def deepfilternet_noise_reduction(y, sr, target_sr=16000):
 
         # resample 16khz to 48khz
         if sr != 48000:
-            print(f"Resampling audio from {sr}Hz to 48000Hz for DeepFilterNet binary.")
+            print(f"Resampling audio from {
+                  sr}Hz to 48000Hz for DeepFilterNet binary.")
             y = librosa.resample(y, orig_sr=sr, target_sr=48000)
             sr = 48000
 
@@ -86,7 +90,9 @@ def deepfilternet_noise_reduction(y, sr, target_sr=16000):
             return y, sr
         except FileNotFoundError as e:
             print(
-                f"\n--- ERROR: Could not find the enhanced audio file after processing. {e}"
+                f"\n--- ERROR: Could not find the enhanced audio file after processing. {
+                    e
+                }"
             )
             print("--- Skipping noise reduction. ---\n")
             return y, sr
